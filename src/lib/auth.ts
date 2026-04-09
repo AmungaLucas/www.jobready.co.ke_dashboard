@@ -47,6 +47,55 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: 'jwt',
   },
+  // Fix: Don't hardcode cookie domain — let NextAuth use the current request domain.
+  // This ensures cookies work on any domain (Vercel default, custom domain, localhost, etc.)
+  cookies: {
+    sessionToken: {
+      name: `${process.env.NEXTAUTH_COOKIE_NAME || 'next-auth'}-session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
+    callbackUrl: {
+      name: `${process.env.NEXTAUTH_COOKIE_NAME || 'next-auth'}-callback-url`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
+    csrfToken: {
+      name: `${process.env.NEXTAUTH_COOKIE_NAME || 'next-auth'}-csrf-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
+    pkceCodeVerifier: {
+      name: `${process.env.NEXTAUTH_COOKIE_NAME || 'next-auth'}-pkce.code_verifier`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
+    state: {
+      name: `${process.env.NEXTAUTH_COOKIE_NAME || 'next-auth'}-state`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
+  },
   callbacks: {
     async jwt({ token, user, trigger, session }) {
       if (user) {
@@ -84,5 +133,6 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: '/login',
   },
+  // Don't hardcode NEXTAUTH_URL — use request headers at runtime
   secret: process.env.NEXTAUTH_SECRET,
 }

@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { signIn } from "next-auth/react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -12,7 +12,6 @@ import { Loader2, Eye, EyeOff } from "lucide-react"
 import { toast } from "sonner"
 
 export default function LoginPage() {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard"
 
@@ -36,8 +35,8 @@ export default function LoginPage() {
       if (result?.error) {
         toast.error("Invalid credentials. Admin access only.")
       } else {
-        router.push(callbackUrl)
-        router.refresh()
+        // Use hard redirect for reliability across domain changes (Vercel, custom domains, etc.)
+        window.location.href = callbackUrl
       }
     } catch {
       toast.error("An error occurred. Please try again.")
