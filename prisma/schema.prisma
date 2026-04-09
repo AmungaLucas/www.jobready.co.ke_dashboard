@@ -1,0 +1,566 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  phone          String?   @unique
+  googleId       String?   @unique
+  name           String
+  passwordHash   String?
+  role           String    @default("JOB_SEEKER")
+  avatar         String?
+  bio            String?
+  location       String?
+  linkedinUrl    String?
+  education      String?
+  skills         Json?
+  cvUrl          String?
+  emailVerified  Boolean   @default(false)
+  phoneVerified  Boolean   @default(false)
+  lastLoginAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  authAccounts   AuthAccount[]
+  savedJobs      SavedJob[]
+  savedArticles  SavedArticle[]
+  jobAlerts      JobAlert[]
+  reactions      ArticleReaction[]
+  notifications  Notification[]
+  orders         Order[]
+  newsletterSubs NewsletterSubscription[]
+  applications   Application[]
+  @@map("users")
+}
+
+model AuthAccount {
+  id                String    @id @default(cuid())
+  userId            String?
+  user              User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider          String
+  providerAccountId String    @unique
+  accessToken       String?   @db.Text
+  refreshToken      String?   @db.Text
+  idToken           String?   @db.Text
+  expiresAt         DateTime?
+  scope             String?   @db.Text
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  @@map("auth_accounts")
+}
+
+model Otp {
+  id         String   @id @default(cuid())
+  phone      String
+  code       String
+  purpose    String   @default("auth")
+  verified   Boolean  @default(false)
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  @@index([phone, purpose])
+  @@map("otps")
+}
+
+model Company {
+  id               String    @id @default(cuid())
+  name             String
+  slug             String    @unique
+  logo             String?
+  logoColor        String?
+  description      String    @db.MediumText
+  organizationType String?   @map("organization_type")
+  industry         String
+  size             String?
+  createdBy        String?
+  county           String?
+  town             String?
+  country          String    @default("Kenya")
+  website          String?
+  socialLinks      Json?
+  contactEmail     String?
+  phoneNumber      String?
+  isVerified       Boolean   @default(false)
+  isFeatured       Boolean   @default(false)
+  isActive         Boolean   @default(true)
+  noIndex          Boolean   @default(false)
+  metaTitle        String?
+  metaDescription  String?
+  ogImage          String?
+  jobCount         Int       @default(0)
+  opportunityCount Int       @default(0)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  jobs             Job[]
+  opportunities    Opportunity[]
+  @@index([organizationType])
+  @@index([industry])
+  @@index([county])
+  @@map("companies")
+}
+
+model Job {
+  id                  String    @id @default(cuid())
+  title               String
+  slug                String    @unique
+  description         String    @db.LongText
+  categories          Json?
+  shortDescription    String?   @map("short_description") @db.Text
+  featuredImage       String?   @map("featured_image")
+  companyId           String
+  company             Company   @relation(fields: [companyId], references: [id])
+  country             String?
+  county              String?
+  town                String?
+  isRemote            Boolean   @default(false) @map("is_remote")
+  salaryMin           Int?      @map("salary_min")
+  salaryMax           Int?      @map("salary_max")
+  salaryCurrency      String    @default("KES") @map("salary_currency")
+  salaryPeriod        String    @default("MONTHLY") @map("salary_period")
+  isSalaryNegotiable  Boolean   @default(false) @map("is_salary_negotiable")
+  employmentType      String    @map("employment_type")
+  experienceLevel     String    @map("experience_level")
+  industry            String?
+  positions           Int       @default(1)
+  applicationDeadline DateTime? @map("application_deadline")
+  howToApply          String?   @map("how_to_apply") @db.Text
+  createdBy           String?
+  isFeatured          Boolean   @default(false) @map("is_featured")
+  isActive            Boolean   @default(true) @map("is_active")
+  status              String    @default("DRAFT")
+  tags                Json?
+  metaTitle           String?   @map("meta_title")
+  metaDescription     String?   @map("meta_description")
+  viewCount           Int       @default(0) @map("view_count")
+  applicantCount      Int       @default(0) @map("applicant_count")
+  publishedAt         DateTime? @map("published_at")
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  savedBy             SavedJob[]
+  applications        Application[]
+  @@index([employmentType])
+  @@index([experienceLevel])
+  @@index([companyId])
+  @@index([county])
+  @@index([isActive])
+  @@index([isFeatured])
+  @@index([status])
+  @@index([country])
+  @@index([industry])
+  @@index([createdBy])
+  @@index([isActive, publishedAt])
+  @@map("jobs")
+}
+
+model Opportunity {
+  id              String    @id @default(cuid())
+  title           String
+  slug            String    @unique
+  description     String    @db.LongText
+  excerpt         String?
+  featuredImage   String?   @map("featured_image")
+  companyId       String?
+  company         Company?  @relation(fields: [companyId], references: [id])
+  opportunityType String
+  deadline        DateTime?
+  howToApply      String?   @db.Text
+  createdBy       String?
+  tags            Json?
+  status          String    @default("DRAFT")
+  isFeatured      Boolean   @default(false)
+  isActive        Boolean   @default(true)
+  noIndex         Boolean   @default(false)
+  metaTitle       String?
+  metaDescription String?
+  ogImage         String?
+  viewCount       Int       @default(0)
+  publishedAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  @@index([opportunityType])
+  @@index([companyId])
+  @@index([createdBy])
+  @@index([isActive, publishedAt])
+  @@index([deadline])
+  @@index([status])
+  @@map("opportunities")
+}
+
+model BlogCategory {
+  id           String   @id @default(cuid())
+  name         String
+  slug         String   @unique
+  description  String?
+  color        String?
+  gradient     String?
+  articleCount Int      @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  articles     BlogArticle[]
+  @@map("blog_categories")
+}
+
+model BlogTag {
+  id           String   @id @default(cuid())
+  name         String
+  slug         String   @unique
+  articleCount Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  articleTags  ArticleTag[]
+  @@map("blog_tags")
+}
+
+model ArticleTag {
+  articleId String
+  article   BlogArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  tagId     String
+  tag       BlogTag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  @@id([articleId, tagId])
+  @@map("article_tags")
+}
+
+model BlogArticle {
+  id              String    @id @default(cuid())
+  title           String
+  slug            String    @unique
+  excerpt         String?
+  content         String    @db.LongText
+  featuredImage   String?
+  authorId        String
+  author          Author    @relation(fields: [authorId], references: [id])
+  categoryId      String
+  category        BlogCategory @relation(fields: [categoryId], references: [id])
+  readingTime     Int       @default(5)
+  viewsCount      Int       @default(0)
+  wordCount       Int       @default(0)
+  isFeatured      Boolean   @default(false)
+  isPublished     Boolean   @default(false)
+  noIndex         Boolean   @default(false)
+  metaTitle       String?
+  metaDescription String?
+  ogImage         String?
+  canonicalUrl    String?
+  publishedAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  tags            ArticleTag[]
+  reactions       ArticleReaction[]
+  savedBy         SavedArticle[]
+  @@index([categoryId])
+  @@index([authorId])
+  @@index([isPublished, publishedAt])
+  @@index([isFeatured])
+  @@map("blog_articles")
+}
+
+model Author {
+  id            String   @id @default(cuid())
+  name          String
+  slug          String   @unique
+  title         String?
+  bio           String?  @db.Text
+  avatar        String?
+  twitterUrl    String?
+  linkedinUrl   String?
+  articleCount  Int      @default(0)
+  totalViews    Int      @default(0)
+  peopleCoached Int      @default(0)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  articles      BlogArticle[]
+  @@map("authors")
+}
+
+model SitePage {
+  id              String    @id @default(cuid())
+  title           String
+  slug            String    @unique
+  content         String    @db.LongText
+  metaTitle       String?
+  metaDescription String?
+  status          String    @default("DRAFT")
+  lastReviewedAt  DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  @@index([status])
+  @@map("site_pages")
+}
+
+model Faq {
+  id          String   @id @default(cuid())
+  question    String
+  answer      String   @db.Text
+  category    String?
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  @@index([category])
+  @@map("faqs")
+}
+
+model SavedJob {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobId     String
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  @@unique([userId, jobId])
+  @@index([userId])
+  @@map("saved_jobs")
+}
+
+model SavedArticle {
+  id         String      @id @default(cuid())
+  userId     String
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  articleId  String
+  article    BlogArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  createdAt  DateTime    @default(now())
+  @@unique([userId, articleId])
+  @@index([userId])
+  @@map("saved_articles")
+}
+
+model JobAlert {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  query           String?
+  location        String?
+  jobType         String?
+  category        String?
+  isActive        Boolean   @default(true)
+  lastSentAt      DateTime?
+  emailOpenCount  Int       @default(0)
+  emailClickCount Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  @@index([userId])
+  @@index([isActive])
+  @@map("job_alerts")
+}
+
+model ArticleReaction {
+  id           String   @id @default(cuid())
+  articleId    String
+  article      BlogArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  userId       String?
+  user         User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reactionType String
+  fingerprint  String
+  ipAddress    String?
+  createdAt    DateTime @default(now())
+  @@unique([articleId, fingerprint, reactionType])
+  @@index([articleId])
+  @@map("article_reactions")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  title     String
+  message   String
+  data      Json?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
+  @@map("notifications")
+}
+
+model ServiceTier {
+  id            String   @id @default(cuid())
+  serviceType   String
+  tier          String
+  name          String
+  description   String   @db.Text
+  price         Int
+  currency      String   @default("KES")
+  features      Json?
+  deliveryDays  Int      @default(3)
+  revisionCount Int      @default(1)
+  isActive      Boolean  @default(true)
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  orderItems    OrderItem[]
+  @@unique([serviceType, tier])
+  @@index([serviceType])
+  @@map("service_tiers")
+}
+
+model Order {
+  id             String    @id @default(cuid())
+  orderNumber    String    @unique
+  userId         String?
+  user           User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  email          String
+  phone          String
+  fullName       String
+  status         String    @default("PENDING")
+  totalAmount    Int
+  paidAmount     Int       @default(0)
+  balanceDue     Int
+  paymentStatus  String    @default("UNPAID")
+  notes          String?
+  confirmedAt    DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  items          OrderItem[]
+  payments       Payment[]
+  activities     OrderActivity[]
+  attachments    OrderAttachment[]
+  @@index([userId])
+  @@index([status])
+  @@index([paymentStatus])
+  @@index([createdAt])
+  @@map("orders")
+}
+
+model OrderItem {
+  id            String     @id @default(cuid())
+  orderId       String
+  order         Order      @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  serviceTierId String
+  serviceTier   ServiceTier @relation(fields: [serviceTierId], references: [id])
+  serviceName   String
+  tierName      String
+  price         Int
+  quantity      Int        @default(1)
+  subtotal      Int
+  createdAt     DateTime   @default(now())
+  @@index([orderId])
+  @@map("order_items")
+}
+
+model Payment {
+  id                 String    @id @default(cuid())
+  orderId            String
+  order              Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  checkoutRequestId  String    @unique
+  mpesaReceiptNumber String?   @unique
+  phoneNumber        String
+  amount             Int
+  status             String    @default("PENDING")
+  resultDesc         String?
+  resultCode         String?
+  mpesaCallbackData  Json?
+  createdAt          DateTime  @default(now())
+  @@index([orderId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("payments")
+}
+
+model OrderActivity {
+  id          String   @id @default(cuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  action      String
+  description String
+  metadata    Json?
+  performedBy String?
+  createdAt   DateTime @default(now())
+  @@index([orderId])
+  @@map("order_activity")
+}
+
+model OrderAttachment {
+  id         String   @id @default(cuid())
+  orderId    String
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  fileName   String
+  filePath   String
+  fileSize   Int?
+  fileType   String?
+  uploadedBy String?
+  createdAt  DateTime @default(now())
+  @@index([orderId])
+  @@map("order_attachments")
+}
+
+model NewsletterSubscription {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  userId         String?
+  user           User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  type           String    @default("career_tips")
+  isActive       Boolean   @default(true)
+  subscribedAt   DateTime  @default(now())
+  unsubscribedAt DateTime?
+  @@index([isActive])
+  @@map("newsletter_subscriptions")
+}
+
+model DataRequest {
+  id            String    @id @default(cuid())
+  email         String
+  requestType   String
+  status        String    @default("RECEIVED")
+  dataRequested Json?
+  processedAt   DateTime?
+  responseNote  String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  @@index([email])
+  @@index([status])
+  @@map("data_requests")
+}
+
+model PageView {
+  id        String   @id @default(cuid())
+  pageType  String
+  pageId    String?
+  sessionId String?
+  ipAddress String?
+  userAgent String?
+  referer   String?
+  createdAt DateTime @default(now())
+  @@index([pageType, pageId])
+  @@index([createdAt])
+  @@map("page_views")
+}
+
+model WhatsAppClick {
+  id          String   @id @default(cuid())
+  pageType    String
+  pageId      String?
+  sessionId   String?
+  phoneNumber String?
+  context     String?
+  createdAt   DateTime @default(now())
+  @@index([pageType])
+  @@index([createdAt])
+  @@map("whatsapp_clicks")
+}
+
+model Application {
+  id            String   @id @default(cuid())
+  jobId         String
+  job           Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  coverLetter   String?  @db.Text
+  cvUrl         String?
+  status        String   @default("PENDING")
+  employerNotes String?  @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  @@index([jobId])
+  @@index([userId])
+  @@index([status])
+  @@map("applications")
+}
