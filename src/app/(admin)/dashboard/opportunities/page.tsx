@@ -113,9 +113,20 @@ export default function OpportunitiesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">Opportunities</h1>
-        <p className="text-slate-500 mt-1">Manage scholarships, fellowships, internships, and more</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Opportunities</h1>
+          <p className="text-slate-500 mt-1">Manage scholarships, fellowships, internships, and more</p>
+        </div>
+        <Button
+          onClick={() => (window.location.href = "/dashboard/opportunities/new")}
+          className="bg-emerald-600 hover:bg-emerald-700 text-white"
+        >
+          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+          Add Opportunity
+        </Button>
       </div>
 
       {/* Filters */}
@@ -192,7 +203,7 @@ export default function OpportunitiesPage() {
                   </TableRow>
                 ) : (
                   items.map((item) => (
-                    <TableRow key={item.id} className="hover:bg-slate-50">
+                    <TableRow key={item.id} className="cursor-pointer hover:bg-slate-50" onClick={() => (window.location.href = `/dashboard/opportunities/${item.id}`)}>
                       <TableCell className="font-medium text-sm">{item.title}</TableCell>
                       <TableCell className="hidden sm:table-cell">
                         <Badge variant="secondary" className="text-xs bg-slate-100">{item.opportunityType?.replace(/_/g, " ")}</Badge>
@@ -218,7 +229,11 @@ export default function OpportunitiesPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => {
+                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); window.location.href = `/dashboard/opportunities/${item.id}` }}>
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={(e) => {
+                              e.stopPropagation()
                               fetch("/api/admin/opportunities", {
                                 method: "PATCH",
                                 headers: { "Content-Type": "application/json" },
@@ -227,13 +242,14 @@ export default function OpportunitiesPage() {
                             }}>
                               {item.status === "PUBLISHED" ? "Unpublish" : "Publish"}
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => {
+                            <DropdownMenuItem onClick={(e) => {
+                              e.stopPropagation()
                               window.open(`${process.env.NEXT_PUBLIC_SITE_URL}/opportunities/${item.slug}`, "_blank")
                             }}>
                               View on site
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-red-600" onClick={() => setDeleteId(item.id)}>
+                            <DropdownMenuItem className="text-red-600" onClick={(e) => { e.stopPropagation(); setDeleteId(item.id) }}>
                               Delete
                             </DropdownMenuItem>
                           </DropdownMenuContent>

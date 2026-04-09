@@ -74,9 +74,20 @@ export default function CompaniesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">Companies</h1>
-        <p className="text-slate-500 mt-1">Manage organizations and employers on the platform</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Companies</h1>
+          <p className="text-slate-500 mt-1">Manage organizations and employers on the platform</p>
+        </div>
+        <Button
+          onClick={() => (window.location.href = "/dashboard/companies/new")}
+          className="bg-emerald-600 hover:bg-emerald-700 text-white"
+        >
+          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+          Add Company
+        </Button>
       </div>
 
       <Card className="border-0 shadow-sm">
@@ -124,7 +135,11 @@ export default function CompaniesPage() {
                   </TableRow>
                 ) : (
                   items.map((item) => (
-                    <TableRow key={item.id} className="hover:bg-slate-50">
+                    <TableRow
+                      key={item.id}
+                      className="cursor-pointer hover:bg-slate-50"
+                      onClick={() => (window.location.href = `/dashboard/companies/${item.id}`)}
+                    >
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <div className="w-9 h-9 bg-slate-100 rounded-lg flex items-center justify-center">
@@ -148,7 +163,7 @@ export default function CompaniesPage() {
                       </TableCell>
                       <TableCell>
                         <button
-                          onClick={() => toggleField(item.id, "isVerified", item.isVerified)}
+                          onClick={(e) => { e.stopPropagation(); toggleField(item.id, "isVerified", item.isVerified) }}
                           className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
                             item.isVerified
                               ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
@@ -161,7 +176,7 @@ export default function CompaniesPage() {
                       </TableCell>
                       <TableCell>
                         <button
-                          onClick={() => toggleField(item.id, "isFeatured", item.isFeatured)}
+                          onClick={(e) => { e.stopPropagation(); toggleField(item.id, "isFeatured", item.isFeatured) }}
                           className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
                             item.isFeatured
                               ? "bg-amber-100 text-amber-700 hover:bg-amber-200"

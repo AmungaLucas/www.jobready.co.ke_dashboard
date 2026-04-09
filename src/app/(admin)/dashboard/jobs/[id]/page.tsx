@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Select,
   SelectContent,
@@ -37,6 +38,9 @@ export default function EditJobPage() {
     title: "",
     description: "",
     shortDescription: "",
+    featuredImage: "",
+    categories: "",
+    tags: "",
     companyId: "",
     companyName: "",
     country: "Kenya",
@@ -56,6 +60,9 @@ export default function EditJobPage() {
     howToApply: "",
     status: "DRAFT",
     isFeatured: false,
+    isActive: true,
+    metaTitle: "",
+    metaDescription: "",
   })
 
   useEffect(() => {
@@ -71,6 +78,9 @@ export default function EditJobPage() {
             title: job.title || "",
             description: job.description || "",
             shortDescription: job.shortDescription || "",
+            featuredImage: job.featuredImage || "",
+            categories: Array.isArray(job.categories) ? (job.categories as string[]).join(", ") : "",
+            tags: Array.isArray(job.tags) ? (job.tags as string[]).join(", ") : "",
             companyId: job.companyId || "",
             companyName: job.company?.name || "",
             country: job.country || "Kenya",
@@ -90,6 +100,9 @@ export default function EditJobPage() {
             howToApply: job.howToApply || "",
             status: job.status || "DRAFT",
             isFeatured: job.isFeatured || false,
+            isActive: job.isActive !== undefined ? job.isActive : true,
+            metaTitle: job.metaTitle || "",
+            metaDescription: job.metaDescription || "",
           })
         }
       })
@@ -104,10 +117,20 @@ export default function EditJobPage() {
   const handleSave = async (status: string) => {
     setSaving(true)
     try {
+      const payload = {
+        ...form,
+        categories: form.categories
+          ? form.categories.split(",").map((s) => s.trim()).filter(Boolean)
+          : null,
+        tags: form.tags
+          ? form.tags.split(",").map((s) => s.trim()).filter(Boolean)
+          : null,
+        status,
+      }
       const res = await fetch("/api/admin/jobs", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: jobId, ...form, status }),
+        body: JSON.stringify({ id: jobId, ...payload }),
       })
       if (res.ok) {
         toast.success("Job updated successfully")
@@ -190,44 +213,34 @@ export default function EditJobPage() {
                   rows={3}
                 />
               </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-base">Compensation</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Salary Min (KES)</Label>
-                  <Input type="number" value={form.salaryMin} onChange={(e) => setForm({ ...form, salaryMin: e.target.value })} className="mt-1" />
-                </div>
-                <div>
-                  <Label>Salary Max (KES)</Label>
-                  <Input type="number" value={form.salaryMax} onChange={(e) => setForm({ ...form, salaryMax: e.target.value })} className="mt-1" />
-                </div>
+              <div>
+                <Label>Featured Image URL</Label>
+                <Input
+                  value={form.featuredImage}
+                  onChange={(e) => setForm({ ...form, featuredImage: e.target.value })}
+                  placeholder="https://example.com/image.jpg"
+                  className="mt-1"
+                />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Salary Period</Label>
-                  <Select value={form.salaryPeriod} onValueChange={(v) => setForm({ ...form, salaryPeriod: v })}>
-                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="MONTHLY">Monthly</SelectItem>
-                      <SelectItem value="ANNUALLY">Annually</SelectItem>
-                      <SelectItem value="HOURLY">Hourly</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Positions</Label>
-                  <Input type="number" value={form.positions} onChange={(e) => setForm({ ...form, positions: e.target.value })} className="mt-1" />
-                </div>
+              <div>
+                <Label>Categories</Label>
+                <Input
+                  value={form.categories}
+                  onChange={(e) => setForm({ ...form, categories: e.target.value })}
+                  placeholder="e.g. Engineering, Design, Marketing"
+                  className="mt-1"
+                />
+                <p className="text-xs text-slate-400 mt-1">Comma-separated values</p>
               </div>
-              <div className="flex items-center gap-2">
-                <input type="checkbox" checked={form.isSalaryNegotiable} onChange={(e) => setForm({ ...form, isSalaryNegotiable: e.target.checked })} className="rounded" />
-                <Label>Salary is negotiable</Label>
+              <div>
+                <Label>Tags</Label>
+                <Input
+                  value={form.tags}
+                  onChange={(e) => setForm({ ...form, tags: e.target.value })}
+                  placeholder="e.g. React, Remote, Urgent"
+                  className="mt-1"
+                />
+                <p className="text-xs text-slate-400 mt-1">Comma-separated values</p>
               </div>
             </CardContent>
           </Card>
@@ -255,8 +268,18 @@ export default function EditJobPage() {
                 <Input type="date" value={form.applicationDeadline} onChange={(e) => setForm({ ...form, applicationDeadline: e.target.value })} className="mt-1" />
               </div>
               <div className="flex items-center gap-2">
-                <input type="checkbox" checked={form.isFeatured} onChange={(e) => setForm({ ...form, isFeatured: e.target.checked })} className="rounded" />
+                <Checkbox
+                  checked={form.isFeatured}
+                  onCheckedChange={(checked) => setForm({ ...form, isFeatured: !!checked })}
+                />
                 <Label>Featured Job</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={form.isActive}
+                  onCheckedChange={(checked) => setForm({ ...form, isActive: !!checked })}
+                />
+                <Label>Active</Label>
               </div>
             </CardContent>
           </Card>
@@ -299,6 +322,62 @@ export default function EditJobPage() {
 
           <Card className="border-0 shadow-sm">
             <CardHeader>
+              <CardTitle className="text-base">Compensation</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label>Salary Currency</Label>
+                <Select value={form.salaryCurrency} onValueChange={(v) => setForm({ ...form, salaryCurrency: v })}>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="KES">KES (Kenyan Shilling)</SelectItem>
+                    <SelectItem value="USD">USD (US Dollar)</SelectItem>
+                    <SelectItem value="GBP">GBP (British Pound)</SelectItem>
+                    <SelectItem value="EUR">EUR (Euro)</SelectItem>
+                    <SelectItem value="TZS">TZS (Tanzanian Shilling)</SelectItem>
+                    <SelectItem value="UGX">UGX (Ugandan Shilling)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Salary Min</Label>
+                  <Input type="number" value={form.salaryMin} onChange={(e) => setForm({ ...form, salaryMin: e.target.value })} className="mt-1" />
+                </div>
+                <div>
+                  <Label>Salary Max</Label>
+                  <Input type="number" value={form.salaryMax} onChange={(e) => setForm({ ...form, salaryMax: e.target.value })} className="mt-1" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Salary Period</Label>
+                  <Select value={form.salaryPeriod} onValueChange={(v) => setForm({ ...form, salaryPeriod: v })}>
+                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="MONTHLY">Monthly</SelectItem>
+                      <SelectItem value="ANNUALLY">Annually</SelectItem>
+                      <SelectItem value="HOURLY">Hourly</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Positions</Label>
+                  <Input type="number" value={form.positions} onChange={(e) => setForm({ ...form, positions: e.target.value })} className="mt-1" />
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={form.isSalaryNegotiable}
+                  onCheckedChange={(checked) => setForm({ ...form, isSalaryNegotiable: !!checked })}
+                />
+                <Label>Salary is negotiable</Label>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-sm">
+            <CardHeader>
               <CardTitle className="text-base">Job Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -334,6 +413,10 @@ export default function EditJobPage() {
                 <Label>Industry</Label>
                 <Input value={form.industry} onChange={(e) => setForm({ ...form, industry: e.target.value })} className="mt-1" />
               </div>
+              <div>
+                <Label>Country</Label>
+                <Input value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} className="mt-1" />
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label>County</Label>
@@ -345,8 +428,38 @@ export default function EditJobPage() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <input type="checkbox" checked={form.isRemote} onChange={(e) => setForm({ ...form, isRemote: e.target.checked })} className="rounded" />
+                <Checkbox
+                  checked={form.isRemote}
+                  onCheckedChange={(checked) => setForm({ ...form, isRemote: !!checked })}
+                />
                 <Label>Remote position</Label>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-base">SEO</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label>Meta Title</Label>
+                <Input
+                  value={form.metaTitle}
+                  onChange={(e) => setForm({ ...form, metaTitle: e.target.value })}
+                  placeholder="Custom meta title for search engines"
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label>Meta Description</Label>
+                <Textarea
+                  value={form.metaDescription}
+                  onChange={(e) => setForm({ ...form, metaDescription: e.target.value })}
+                  placeholder="Custom meta description for search engines"
+                  className="mt-1"
+                  rows={3}
+                />
               </div>
             </CardContent>
           </Card>

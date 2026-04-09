@@ -39,6 +39,43 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ items, total, page, totalPages: Math.ceil(total / limit) })
 }
 
+export async function POST(req: NextRequest) {
+  const admin = await verifyAdmin(req)
+  if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+  const body = await req.json()
+
+  // Generate slug from title
+  const slug = body.slug || body.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
+
+  const opportunity = await db.opportunity.create({
+    data: {
+      title: body.title,
+      slug,
+      description: body.description || "",
+      excerpt: body.excerpt,
+      featuredImage: body.featuredImage,
+      companyId: body.companyId || null,
+      opportunityType: body.opportunityType,
+      deadline: body.deadline ? new Date(body.deadline) : null,
+      howToApply: body.howToApply,
+      tags: body.tags || null,
+      status: body.status || "DRAFT",
+      isFeatured: body.isFeatured || false,
+      isActive: body.isActive !== undefined ? body.isActive : true,
+      noIndex: body.noIndex || false,
+      metaTitle: body.metaTitle,
+      metaDescription: body.metaDescription,
+      ogImage: body.ogImage,
+      createdBy: admin.id as string,
+      publishedAt: body.status === "PUBLISHED" ? new Date() : null,
+    },
+    include: { company: { select: { name: true } } },
+  })
+
+  return NextResponse.json(opportunity, { status: 201 })
+}
+
 export async function PATCH(req: NextRequest) {
   const admin = await verifyAdmin(req)
   if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })

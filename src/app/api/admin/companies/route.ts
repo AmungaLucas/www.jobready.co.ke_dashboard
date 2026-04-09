@@ -9,6 +9,33 @@ async function verifyAdmin(req: NextRequest) {
   return token
 }
 
+export async function POST(req: NextRequest) {
+  const admin = await verifyAdmin(req)
+  if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+  const body = await req.json()
+  const { name, ...data } = body
+  if (!name) return NextResponse.json({ error: "Name is required" }, { status: 400 })
+
+  const slug = name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/[\s_]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+
+  const item = await db.company.create({
+    data: {
+      name,
+      slug,
+      ...data,
+    },
+  })
+
+  return NextResponse.json(item, { status: 201 })
+}
+
 export async function GET(req: NextRequest) {
   const admin = await verifyAdmin(req)
   if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
