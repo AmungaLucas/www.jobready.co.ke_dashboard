@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { toast } from "sonner"
+import { FileImportButton } from "@/components/file-import-button"
 
 interface Company {
   id: string
@@ -166,13 +167,22 @@ export default function EditJobPage() {
           <h1 className="text-2xl font-bold text-slate-900">Edit Job</h1>
           <p className="text-slate-500 mt-1">{form.title}</p>
         </div>
-        <Button variant="outline" onClick={() => router.push("/dashboard/jobs")}>
-          Cancel
-        </Button>
+        <div className="flex items-center gap-3">
+          <FileImportButton
+            onDataExtracted={(data) => setForm((prev) => ({ ...prev, ...Object.fromEntries(Object.entries(data).filter(([, v]) => v !== undefined && v !== null).map(([k, v]) => [k, typeof v === 'number' ? String(v) : v])) }))}
+            variant="outline"
+            size="sm"
+          />
+          <Button variant="outline" onClick={() => router.push("/dashboard/jobs")}>
+            Cancel
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left column */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Card 1: Job Details */}
           <Card className="border-0 shadow-sm">
             <CardHeader>
               <CardTitle className="text-base">Job Details</CardTitle>
@@ -222,36 +232,121 @@ export default function EditJobPage() {
                   className="mt-1"
                 />
               </div>
-              <div>
-                <Label>Categories</Label>
-                <Input
-                  value={form.categories}
-                  onChange={(e) => setForm({ ...form, categories: e.target.value })}
-                  placeholder="e.g. Engineering, Design, Marketing"
-                  className="mt-1"
-                />
-                <p className="text-xs text-slate-400 mt-1">Comma-separated values</p>
+            </CardContent>
+          </Card>
+
+          {/* Card 2: Location & Type */}
+          <Card className="border-0 shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-base">Location &amp; Type</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Employment Type</Label>
+                  <Select value={form.employmentType} onValueChange={(v) => setForm({ ...form, employmentType: v })}>
+                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="FULL_TIME">Full-time</SelectItem>
+                      <SelectItem value="PART_TIME">Part-time</SelectItem>
+                      <SelectItem value="CONTRACT">Contract</SelectItem>
+                      <SelectItem value="INTERNSHIP">Internship</SelectItem>
+                      <SelectItem value="TEMPORARY">Temporary</SelectItem>
+                      <SelectItem value="VOLUNTEER">Volunteer</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Experience Level</Label>
+                  <Select value={form.experienceLevel} onValueChange={(v) => setForm({ ...form, experienceLevel: v })}>
+                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ENTRY_LEVEL">Entry Level</SelectItem>
+                      <SelectItem value="MID_LEVEL">Mid Level</SelectItem>
+                      <SelectItem value="SENIOR">Senior</SelectItem>
+                      <SelectItem value="MANAGER">Manager</SelectItem>
+                      <SelectItem value="DIRECTOR">Director</SelectItem>
+                      <SelectItem value="EXECUTIVE">Executive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <div>
-                <Label>Tags</Label>
-                <Input
-                  value={form.tags}
-                  onChange={(e) => setForm({ ...form, tags: e.target.value })}
-                  placeholder="e.g. React, Remote, Urgent"
-                  className="mt-1"
-                />
-                <p className="text-xs text-slate-400 mt-1">Comma-separated values</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Industry</Label>
+                  <Input value={form.industry} onChange={(e) => setForm({ ...form, industry: e.target.value })} className="mt-1" />
+                </div>
+                <div>
+                  <Label>Positions</Label>
+                  <Input type="number" value={form.positions} onChange={(e) => setForm({ ...form, positions: e.target.value })} className="mt-1" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Country</Label>
+                  <Input value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} className="mt-1" />
+                </div>
+                <div>
+                  <Label>County</Label>
+                  <Input value={form.county} onChange={(e) => setForm({ ...form, county: e.target.value })} className="mt-1" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Town</Label>
+                  <Input value={form.town} onChange={(e) => setForm({ ...form, town: e.target.value })} className="mt-1" />
+                </div>
+                <div className="flex items-center gap-2 pt-6">
+                  <Checkbox
+                    checked={form.isRemote}
+                    onCheckedChange={(checked) => setForm({ ...form, isRemote: !!checked })}
+                  />
+                  <Label>Remote position</Label>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Card 3: Tags & Categories */}
+          <Card className="border-0 shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-base">Tags &amp; Categories</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Categories</Label>
+                  <Input
+                    value={form.categories}
+                    onChange={(e) => setForm({ ...form, categories: e.target.value })}
+                    placeholder="e.g. Engineering, Design"
+                    className="mt-1"
+                  />
+                  <p className="text-xs text-slate-400 mt-1">Comma-separated values</p>
+                </div>
+                <div>
+                  <Label>Tags</Label>
+                  <Input
+                    value={form.tags}
+                    onChange={(e) => setForm({ ...form, tags: e.target.value })}
+                    placeholder="e.g. React, Remote, Urgent"
+                    className="mt-1"
+                  />
+                  <p className="text-xs text-slate-400 mt-1">Comma-separated values</p>
+                </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
+        {/* Right column (sidebar) */}
         <div className="space-y-6">
+          {/* Publishing */}
           <Card className="border-0 shadow-sm">
             <CardHeader>
               <CardTitle className="text-base">Publishing</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3">
               <div>
                 <Label>Status</Label>
                 <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
@@ -284,11 +379,12 @@ export default function EditJobPage() {
             </CardContent>
           </Card>
 
+          {/* Company */}
           <Card className="border-0 shadow-sm">
             <CardHeader>
               <CardTitle className="text-base">Company</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-3">
               <div className="relative">
                 <Input
                   value={form.companyName}
@@ -320,11 +416,12 @@ export default function EditJobPage() {
             </CardContent>
           </Card>
 
+          {/* Compensation */}
           <Card className="border-0 shadow-sm">
             <CardHeader>
               <CardTitle className="text-base">Compensation</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3">
               <div>
                 <Label>Salary Currency</Label>
                 <Select value={form.salaryCurrency} onValueChange={(v) => setForm({ ...form, salaryCurrency: v })}>
@@ -339,7 +436,7 @@ export default function EditJobPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label>Salary Min</Label>
                   <Input type="number" value={form.salaryMin} onChange={(e) => setForm({ ...form, salaryMin: e.target.value })} className="mt-1" />
@@ -349,22 +446,16 @@ export default function EditJobPage() {
                   <Input type="number" value={form.salaryMax} onChange={(e) => setForm({ ...form, salaryMax: e.target.value })} className="mt-1" />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Salary Period</Label>
-                  <Select value={form.salaryPeriod} onValueChange={(v) => setForm({ ...form, salaryPeriod: v })}>
-                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="MONTHLY">Monthly</SelectItem>
-                      <SelectItem value="ANNUALLY">Annually</SelectItem>
-                      <SelectItem value="HOURLY">Hourly</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Positions</Label>
-                  <Input type="number" value={form.positions} onChange={(e) => setForm({ ...form, positions: e.target.value })} className="mt-1" />
-                </div>
+              <div>
+                <Label>Salary Period</Label>
+                <Select value={form.salaryPeriod} onValueChange={(v) => setForm({ ...form, salaryPeriod: v })}>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="MONTHLY">Monthly</SelectItem>
+                    <SelectItem value="ANNUALLY">Annually</SelectItem>
+                    <SelectItem value="HOURLY">Hourly</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="flex items-center gap-2">
                 <Checkbox
@@ -376,72 +467,12 @@ export default function EditJobPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-base">Job Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label>Employment Type</Label>
-                <Select value={form.employmentType} onValueChange={(v) => setForm({ ...form, employmentType: v })}>
-                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="FULL_TIME">Full-time</SelectItem>
-                    <SelectItem value="PART_TIME">Part-time</SelectItem>
-                    <SelectItem value="CONTRACT">Contract</SelectItem>
-                    <SelectItem value="INTERNSHIP">Internship</SelectItem>
-                    <SelectItem value="TEMPORARY">Temporary</SelectItem>
-                    <SelectItem value="VOLUNTEER">Volunteer</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Experience Level</Label>
-                <Select value={form.experienceLevel} onValueChange={(v) => setForm({ ...form, experienceLevel: v })}>
-                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ENTRY_LEVEL">Entry Level</SelectItem>
-                    <SelectItem value="MID_LEVEL">Mid Level</SelectItem>
-                    <SelectItem value="SENIOR">Senior</SelectItem>
-                    <SelectItem value="MANAGER">Manager</SelectItem>
-                    <SelectItem value="DIRECTOR">Director</SelectItem>
-                    <SelectItem value="EXECUTIVE">Executive</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Industry</Label>
-                <Input value={form.industry} onChange={(e) => setForm({ ...form, industry: e.target.value })} className="mt-1" />
-              </div>
-              <div>
-                <Label>Country</Label>
-                <Input value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} className="mt-1" />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>County</Label>
-                  <Input value={form.county} onChange={(e) => setForm({ ...form, county: e.target.value })} className="mt-1" />
-                </div>
-                <div>
-                  <Label>Town</Label>
-                  <Input value={form.town} onChange={(e) => setForm({ ...form, town: e.target.value })} className="mt-1" />
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  checked={form.isRemote}
-                  onCheckedChange={(checked) => setForm({ ...form, isRemote: !!checked })}
-                />
-                <Label>Remote position</Label>
-              </div>
-            </CardContent>
-          </Card>
-
+          {/* SEO (compact) */}
           <Card className="border-0 shadow-sm">
             <CardHeader>
               <CardTitle className="text-base">SEO</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3">
               <div>
                 <Label>Meta Title</Label>
                 <Input
@@ -458,12 +489,13 @@ export default function EditJobPage() {
                   onChange={(e) => setForm({ ...form, metaDescription: e.target.value })}
                   placeholder="Custom meta description for search engines"
                   className="mt-1"
-                  rows={3}
+                  rows={2}
                 />
               </div>
             </CardContent>
           </Card>
 
+          {/* Action buttons */}
           <div className="flex gap-3">
             <Button onClick={() => handleSave("DRAFT")} disabled={saving} variant="outline" className="flex-1">
               {saving ? "Saving..." : "Save Draft"}

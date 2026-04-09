@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { toast } from "sonner"
+import { FileImportButton } from "@/components/file-import-button"
 
 interface Company {
   id: string
@@ -170,9 +171,16 @@ export default function EditOpportunityPage() {
           <h1 className="text-2xl font-bold text-slate-900">Edit Opportunity</h1>
           <p className="text-slate-500 mt-1">{form.title}</p>
         </div>
-        <Button variant="outline" onClick={() => router.push("/dashboard/opportunities")}>
-          Cancel
-        </Button>
+        <div className="flex items-center gap-3">
+          <FileImportButton
+            onDataExtracted={(data) => setForm((prev) => ({ ...prev, ...Object.fromEntries(Object.entries(data).filter(([, v]) => v !== undefined && v !== null).map(([k, v]) => [k, typeof v === 'number' ? String(v) : v])) }))}
+            variant="outline"
+            size="sm"
+          />
+          <Button variant="outline" onClick={() => router.push("/dashboard/opportunities")}>
+            Cancel
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -245,7 +253,7 @@ export default function EditOpportunityPage() {
             <CardHeader>
               <CardTitle className="text-base">Publishing</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3">
               <div>
                 <Label>Status</Label>
                 <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
@@ -345,7 +353,7 @@ export default function EditOpportunityPage() {
             <CardHeader>
               <CardTitle className="text-base">SEO</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3">
               <div>
                 <Label>Meta Title</Label>
                 <Input

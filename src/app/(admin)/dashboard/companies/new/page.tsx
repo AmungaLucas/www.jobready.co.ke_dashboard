@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { toast } from "sonner"
+import { FileImportButton } from "@/components/file-import-button"
 
 export default function NewCompanyPage() {
   const router = useRouter()
@@ -113,13 +114,20 @@ export default function NewCompanyPage() {
           <h1 className="text-2xl font-bold text-slate-900">Create New Company</h1>
           <p className="text-slate-500 mt-1">Add a new organization to the platform</p>
         </div>
-        <Button variant="outline" onClick={() => router.push("/dashboard/companies")}>
-          Cancel
-        </Button>
+        <div className="flex items-center gap-3">
+          <FileImportButton
+            onDataExtracted={(data) => setForm((prev) => ({ ...prev, ...Object.fromEntries(Object.entries(data).filter(([, v]) => v !== undefined && v !== null).map(([k, v]) => [k, typeof v === 'number' ? String(v) : v])) }))}
+            variant="outline"
+            size="sm"
+          />
+          <Button variant="outline" onClick={() => router.push("/dashboard/companies")}>
+            Cancel
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Form */}
+        {/* Left column */}
         <div className="lg:col-span-2 space-y-6">
           {/* Company Information */}
           <Card className="border-0 shadow-sm">
@@ -230,55 +238,57 @@ export default function NewCompanyPage() {
             <CardHeader>
               <CardTitle className="text-base">Social Links</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label>Facebook URL</Label>
-                <Input
-                  value={form.facebook}
-                  onChange={(e) => setForm({ ...form, facebook: e.target.value })}
-                  placeholder="https://facebook.com/company"
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <Label>Twitter URL</Label>
-                <Input
-                  value={form.twitter}
-                  onChange={(e) => setForm({ ...form, twitter: e.target.value })}
-                  placeholder="https://twitter.com/company"
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <Label>LinkedIn URL</Label>
-                <Input
-                  value={form.linkedin}
-                  onChange={(e) => setForm({ ...form, linkedin: e.target.value })}
-                  placeholder="https://linkedin.com/company"
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <Label>Instagram URL</Label>
-                <Input
-                  value={form.instagram}
-                  onChange={(e) => setForm({ ...form, instagram: e.target.value })}
-                  placeholder="https://instagram.com/company"
-                  className="mt-1"
-                />
+            <CardContent>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Facebook URL</Label>
+                  <Input
+                    value={form.facebook}
+                    onChange={(e) => setForm({ ...form, facebook: e.target.value })}
+                    placeholder="https://facebook.com/company"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label>Twitter URL</Label>
+                  <Input
+                    value={form.twitter}
+                    onChange={(e) => setForm({ ...form, twitter: e.target.value })}
+                    placeholder="https://twitter.com/company"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label>LinkedIn URL</Label>
+                  <Input
+                    value={form.linkedin}
+                    onChange={(e) => setForm({ ...form, linkedin: e.target.value })}
+                    placeholder="https://linkedin.com/company"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label>Instagram URL</Label>
+                  <Input
+                    value={form.instagram}
+                    onChange={(e) => setForm({ ...form, instagram: e.target.value })}
+                    placeholder="https://instagram.com/company"
+                    className="mt-1"
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Sidebar */}
+        {/* Right column (sidebar) */}
         <div className="space-y-6">
-          {/* Branding */}
+          {/* Branding & Location */}
           <Card className="border-0 shadow-sm">
             <CardHeader>
-              <CardTitle className="text-base">Branding</CardTitle>
+              <CardTitle className="text-base">Branding &amp; Location</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3">
               <div>
                 <Label>Logo URL</Label>
                 <Input
@@ -305,31 +315,25 @@ export default function NewCompanyPage() {
                   />
                 </div>
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Location */}
-          <Card className="border-0 shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-base">Location</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label>Country</Label>
-                <Input
-                  value={form.country}
-                  onChange={(e) => setForm({ ...form, country: e.target.value })}
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <Label>County</Label>
-                <Input
-                  value={form.county}
-                  onChange={(e) => setForm({ ...form, county: e.target.value })}
-                  placeholder="e.g. Nairobi"
-                  className="mt-1"
-                />
+              <div className="border-t my-4" />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Country</Label>
+                  <Input
+                    value={form.country}
+                    onChange={(e) => setForm({ ...form, country: e.target.value })}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label>County</Label>
+                  <Input
+                    value={form.county}
+                    onChange={(e) => setForm({ ...form, county: e.target.value })}
+                    placeholder="e.g. Nairobi"
+                    className="mt-1"
+                  />
+                </div>
               </div>
               <div>
                 <Label>Town</Label>
@@ -348,7 +352,7 @@ export default function NewCompanyPage() {
             <CardHeader>
               <CardTitle className="text-base">Settings</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-2">
               <div className="flex items-center gap-2">
                 <Checkbox
                   checked={form.isVerified}
@@ -380,12 +384,12 @@ export default function NewCompanyPage() {
             </CardContent>
           </Card>
 
-          {/* SEO */}
+          {/* SEO (compact) */}
           <Card className="border-0 shadow-sm">
             <CardHeader>
               <CardTitle className="text-base">SEO</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3">
               <div>
                 <Label>Meta Title</Label>
                 <Input
@@ -418,7 +422,7 @@ export default function NewCompanyPage() {
             </CardContent>
           </Card>
 
-          {/* Action buttons */}
+          {/* Action button */}
           <div className="flex gap-3">
             <Button
               onClick={handleSave}
