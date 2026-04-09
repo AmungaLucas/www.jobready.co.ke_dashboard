@@ -9,25 +9,14 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Checkbox } from "@/components/ui/checkbox"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
 import { FileImportButton } from "@/components/file-import-button"
-
-interface Company {
-  id: string
-  name: string
-  slug: string
-}
+import { Briefcase, MapPin, Banknote, Building2, Settings2, Tag, Search, ArrowLeft } from "lucide-react"
 
 export default function NewJobPage() {
   const router = useRouter()
-  const [companies, setCompanies] = useState<Company[]>([])
+  const [companies, setCompanies] = useState<{ id: string; name: string; slug: string }[]>([])
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [companySearch, setCompanySearch] = useState("")
@@ -71,6 +60,17 @@ export default function NewJobPage() {
       .finally(() => setLoading(false))
   }, [])
 
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      const target = e.target as HTMLElement
+      if (!target.closest("[data-company-dropdown]")) {
+        setShowCompanyList(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
+
   const filteredCompanies = companies.filter((c) =>
     c.name.toLowerCase().includes(companySearch.toLowerCase())
   )
@@ -108,95 +108,131 @@ export default function NewJobPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Create New Job</h1>
-          <p className="text-slate-500 mt-1">Add a new job listing to the platform</p>
+    <div className="max-w-5xl mx-auto">
+      {/* Back link */}
+      <button
+        onClick={() => router.push("/dashboard/jobs")}
+        className="text-sm text-slate-500 hover:text-slate-900 transition-colors inline-flex items-center gap-1.5 mb-6"
+      >
+        <ArrowLeft className="size-3.5" />
+        Back to Jobs
+      </button>
+
+      {/* Page header */}
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-8">
+        <div className="flex items-start gap-3">
+          <div className="mt-1 p-2.5 bg-blue-50 text-blue-600 rounded-xl">
+            <Briefcase className="size-5" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Create New Job</h1>
+            <p className="text-slate-500 mt-0.5">Add a new job listing to the platform</p>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 flex-shrink-0">
           <FileImportButton
-            onDataExtracted={(data) => setForm((prev) => ({ ...prev, ...Object.fromEntries(Object.entries(data).filter(([, v]) => v !== undefined && v !== null).map(([k, v]) => [k, typeof v === 'number' ? String(v) : v])) }))}
+            onDataExtracted={(data) =>
+              setForm((prev) => ({
+                ...prev,
+                ...Object.fromEntries(
+                  Object.entries(data)
+                    .filter(([, v]) => v !== undefined && v !== null)
+                    .map(([k, v]) => [k, typeof v === "number" ? String(v) : v])
+                ),
+              }))
+            }
             variant="outline"
             size="sm"
           />
-          <Button variant="outline" onClick={() => router.push("/dashboard/jobs")}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => router.push("/dashboard/jobs")}
+          >
             Cancel
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left column */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Card 1: Job Details */}
-          <Card className="border-0 shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-base">Job Details</CardTitle>
+      {/* Main grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {/* Left column — main content */}
+        <div className="lg:col-span-2 space-y-5">
+          {/* ── Job Details ── */}
+          <Card className="border border-slate-200 rounded-xl">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-[15px] font-semibold text-slate-800 flex items-center gap-2">
+                <Briefcase className="size-4 text-blue-500" />
+                Job Details
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <Label>Job Title *</Label>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-slate-700">Title *</Label>
                 <Input
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
                   placeholder="e.g. Senior Software Engineer"
-                  className="mt-1"
+                  className="border-slate-200 focus:border-blue-400"
                 />
               </div>
-              <div>
-                <Label>Short Description</Label>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-slate-700">Short Description</Label>
                 <Textarea
                   value={form.shortDescription}
                   onChange={(e) => setForm({ ...form, shortDescription: e.target.value })}
                   placeholder="Brief summary of the job (1-2 sentences)"
-                  className="mt-1"
+                  className="border-slate-200 focus:border-blue-400 resize-none"
                   rows={2}
                 />
               </div>
-              <div>
-                <Label>Full Description *</Label>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-slate-700">Description *</Label>
                 <Textarea
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
                   placeholder="Full job description with responsibilities, requirements, etc."
-                  className="mt-1"
+                  className="border-slate-200 focus:border-blue-400 resize-none"
                   rows={12}
                 />
               </div>
-              <div>
-                <Label>How to Apply</Label>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-slate-700">How to Apply</Label>
                 <Textarea
                   value={form.howToApply}
                   onChange={(e) => setForm({ ...form, howToApply: e.target.value })}
                   placeholder="Instructions for applicants"
-                  className="mt-1"
+                  className="border-slate-200 focus:border-blue-400 resize-none"
                   rows={3}
                 />
               </div>
-              <div>
-                <Label>Featured Image URL</Label>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-slate-700">Featured Image</Label>
                 <Input
                   value={form.featuredImage}
                   onChange={(e) => setForm({ ...form, featuredImage: e.target.value })}
                   placeholder="https://example.com/image.jpg"
-                  className="mt-1"
+                  className="border-slate-200 focus:border-blue-400"
                 />
+                <p className="text-xs text-slate-400">Enter a URL for the featured image</p>
               </div>
             </CardContent>
           </Card>
 
-          {/* Card 2: Location & Type */}
-          <Card className="border-0 shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-base">Location &amp; Type</CardTitle>
+          {/* ── Location & Type ── */}
+          <Card className="border border-slate-200 rounded-xl">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-[15px] font-semibold text-slate-800 flex items-center gap-2">
+                <MapPin className="size-4 text-emerald-500" />
+                Location &amp; Type
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>Employment Type</Label>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium text-slate-700">Employment Type</Label>
                   <Select value={form.employmentType} onValueChange={(v) => setForm({ ...form, employmentType: v })}>
-                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="border-slate-200"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="FULL_TIME">Full-time</SelectItem>
                       <SelectItem value="PART_TIME">Part-time</SelectItem>
@@ -207,10 +243,10 @@ export default function NewJobPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <Label>Experience Level</Label>
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium text-slate-700">Experience Level</Label>
                   <Select value={form.experienceLevel} onValueChange={(v) => setForm({ ...form, experienceLevel: v })}>
-                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="border-slate-200"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="ENTRY_LEVEL">Entry Level</SelectItem>
                       <SelectItem value="MID_LEVEL">Mid Level</SelectItem>
@@ -222,197 +258,83 @@ export default function NewJobPage() {
                   </Select>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>Industry</Label>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium text-slate-700">Industry</Label>
                   <Input
                     value={form.industry}
                     onChange={(e) => setForm({ ...form, industry: e.target.value })}
                     placeholder="e.g. Technology"
-                    className="mt-1"
+                    className="border-slate-200 focus:border-blue-400"
                   />
                 </div>
-                <div>
-                  <Label>Positions</Label>
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium text-slate-700">Positions</Label>
                   <Input
                     type="number"
                     value={form.positions}
                     onChange={(e) => setForm({ ...form, positions: e.target.value })}
-                    className="mt-1"
+                    className="border-slate-200 focus:border-blue-400"
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>Country</Label>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium text-slate-700">Country</Label>
                   <Input
                     value={form.country}
                     onChange={(e) => setForm({ ...form, country: e.target.value })}
-                    className="mt-1"
+                    className="border-slate-200 focus:border-blue-400"
                   />
                 </div>
-                <div>
-                  <Label>County</Label>
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium text-slate-700">County</Label>
                   <Input
                     value={form.county}
                     onChange={(e) => setForm({ ...form, county: e.target.value })}
                     placeholder="e.g. Nairobi"
-                    className="mt-1"
+                    className="border-slate-200 focus:border-blue-400"
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>Town</Label>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium text-slate-700">Town</Label>
                   <Input
                     value={form.town}
                     onChange={(e) => setForm({ ...form, town: e.target.value })}
                     placeholder="e.g. Westlands"
-                    className="mt-1"
+                    className="border-slate-200 focus:border-blue-400"
                   />
                 </div>
-                <div className="flex items-center gap-2 pt-6">
+                <div className="flex items-center gap-2.5 pt-6">
                   <Checkbox
                     checked={form.isRemote}
                     onCheckedChange={(checked) => setForm({ ...form, isRemote: !!checked })}
+                    className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
                   />
-                  <Label>Remote position</Label>
+                  <Label className="text-sm text-slate-700 cursor-pointer">Remote position</Label>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Card 3: Tags & Categories */}
-          <Card className="border-0 shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-base">Tags &amp; Categories</CardTitle>
+          {/* ── Compensation ── */}
+          <Card className="border border-slate-200 rounded-xl">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-[15px] font-semibold text-slate-800 flex items-center gap-2">
+                <Banknote className="size-4 text-purple-500" />
+                Compensation
+              </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>Categories</Label>
-                  <Input
-                    value={form.categories}
-                    onChange={(e) => setForm({ ...form, categories: e.target.value })}
-                    placeholder="e.g. Engineering, Design"
-                    className="mt-1"
-                  />
-                  <p className="text-xs text-slate-400 mt-1">Comma-separated values</p>
-                </div>
-                <div>
-                  <Label>Tags</Label>
-                  <Input
-                    value={form.tags}
-                    onChange={(e) => setForm({ ...form, tags: e.target.value })}
-                    placeholder="e.g. React, Remote, Urgent"
-                    className="mt-1"
-                  />
-                  <p className="text-xs text-slate-400 mt-1">Comma-separated values</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Right column (sidebar) */}
-        <div className="space-y-6">
-          {/* Publishing */}
-          <Card className="border-0 shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-base">Publishing</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div>
-                <Label>Status</Label>
-                <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
-                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="DRAFT">Draft</SelectItem>
-                    <SelectItem value="PUBLISHED">Published</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Application Deadline</Label>
-                <Input
-                  type="date"
-                  value={form.applicationDeadline}
-                  onChange={(e) => setForm({ ...form, applicationDeadline: e.target.value })}
-                  className="mt-1"
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  checked={form.isFeatured}
-                  onCheckedChange={(checked) => setForm({ ...form, isFeatured: !!checked })}
-                />
-                <Label>Featured Job</Label>
-              </div>
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  checked={form.isActive}
-                  onCheckedChange={(checked) => setForm({ ...form, isActive: !!checked })}
-                />
-                <Label>Active</Label>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Company */}
-          <Card className="border-0 shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-base">Company</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {loading ? (
-                <Skeleton className="h-10 w-full" />
-              ) : (
-                <div className="relative">
-                  <Input
-                    value={form.companyName}
-                    onChange={(e) => {
-                      setForm({ ...form, companyName: e.target.value, companyId: "" })
-                      setCompanySearch(e.target.value)
-                      setShowCompanyList(true)
-                    }}
-                    onFocus={() => setShowCompanyList(true)}
-                    placeholder="Search company..."
-                    className="mt-0"
-                  />
-                  {showCompanyList && companySearch && (
-                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                      {filteredCompanies.map((company) => (
-                        <button
-                          key={company.id}
-                          className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 transition-colors"
-                          onClick={() => {
-                            setForm({ ...form, companyId: company.id, companyName: company.name })
-                            setShowCompanyList(false)
-                          }}
-                        >
-                          {company.name}
-                        </button>
-                      ))}
-                      {filteredCompanies.length === 0 && (
-                        <p className="px-3 py-2 text-sm text-slate-400">No companies found</p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Compensation */}
-          <Card className="border-0 shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-base">Compensation</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div>
-                <Label>Salary Currency</Label>
+            <CardContent className="space-y-4">
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-slate-700">Currency</Label>
                 <Select value={form.salaryCurrency} onValueChange={(v) => setForm({ ...form, salaryCurrency: v })}>
-                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="border-slate-200"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="KES">KES (Kenyan Shilling)</SelectItem>
                     <SelectItem value="USD">USD (US Dollar)</SelectItem>
@@ -423,32 +345,34 @@ export default function NewJobPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>Salary Min</Label>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium text-slate-700">Min</Label>
                   <Input
                     type="number"
                     value={form.salaryMin}
                     onChange={(e) => setForm({ ...form, salaryMin: e.target.value })}
                     placeholder="e.g. 50000"
-                    className="mt-1"
+                    className="border-slate-200 focus:border-blue-400"
                   />
                 </div>
-                <div>
-                  <Label>Salary Max</Label>
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium text-slate-700">Max</Label>
                   <Input
                     type="number"
                     value={form.salaryMax}
                     onChange={(e) => setForm({ ...form, salaryMax: e.target.value })}
                     placeholder="e.g. 120000"
-                    className="mt-1"
+                    className="border-slate-200 focus:border-blue-400"
                   />
                 </div>
               </div>
-              <div>
-                <Label>Salary Period</Label>
+
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-slate-700">Period</Label>
                 <Select value={form.salaryPeriod} onValueChange={(v) => setForm({ ...form, salaryPeriod: v })}>
-                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="border-slate-200"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="MONTHLY">Monthly</SelectItem>
                     <SelectItem value="ANNUALLY">Annually</SelectItem>
@@ -456,62 +380,214 @@ export default function NewJobPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex items-center gap-2">
+
+              <div className="flex items-center gap-2.5">
                 <Checkbox
                   checked={form.isSalaryNegotiable}
                   onCheckedChange={(checked) => setForm({ ...form, isSalaryNegotiable: !!checked })}
+                  className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
                 />
-                <Label>Salary is negotiable</Label>
+                <Label className="text-sm text-slate-700 cursor-pointer">Salary is negotiable</Label>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right column — sidebar */}
+        <div className="space-y-5">
+          {/* ── Publishing ── */}
+          <Card className="border border-slate-200 rounded-xl">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-[15px] font-semibold text-slate-800 flex items-center gap-2">
+                <Settings2 className="size-4 text-amber-500" />
+                Publishing
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-slate-700">Status</Label>
+                <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
+                  <SelectTrigger className="border-slate-200"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="DRAFT">Draft</SelectItem>
+                    <SelectItem value="PUBLISHED">Published</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-slate-700">Application Deadline</Label>
+                <Input
+                  type="date"
+                  value={form.applicationDeadline}
+                  onChange={(e) => setForm({ ...form, applicationDeadline: e.target.value })}
+                  className="border-slate-200 focus:border-blue-400"
+                />
+              </div>
+
+              <div className="space-y-3 pt-1">
+                <div className="flex items-center gap-2.5">
+                  <Checkbox
+                    checked={form.isFeatured}
+                    onCheckedChange={(checked) => setForm({ ...form, isFeatured: !!checked })}
+                    className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+                  />
+                  <Label className="text-sm text-slate-700 cursor-pointer">Featured Job</Label>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <Checkbox
+                    checked={form.isActive}
+                    onCheckedChange={(checked) => setForm({ ...form, isActive: !!checked })}
+                    className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+                  />
+                  <Label className="text-sm text-slate-700 cursor-pointer">Active</Label>
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* SEO (compact) */}
-          <Card className="border-0 shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-base">SEO</CardTitle>
+          {/* ── SEO ── */}
+          <Card className="border border-slate-200 rounded-xl">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-[15px] font-semibold text-slate-800 flex items-center gap-2">
+                <Search className="size-4 text-rose-500" />
+                SEO
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <div>
-                <Label>Meta Title</Label>
+            <CardContent className="space-y-4">
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-slate-700">Meta Title</Label>
                 <Input
                   value={form.metaTitle}
                   onChange={(e) => setForm({ ...form, metaTitle: e.target.value })}
                   placeholder="Custom meta title for search engines"
-                  className="mt-1"
+                  className="border-slate-200 focus:border-blue-400"
                 />
+                <p className="text-xs text-slate-400">Leave empty to auto-generate from title</p>
               </div>
-              <div>
-                <Label>Meta Description</Label>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-slate-700">Meta Description</Label>
                 <Textarea
                   value={form.metaDescription}
                   onChange={(e) => setForm({ ...form, metaDescription: e.target.value })}
                   placeholder="Custom meta description for search engines"
-                  className="mt-1"
-                  rows={2}
+                  className="border-slate-200 focus:border-blue-400 resize-none"
+                  rows={3}
                 />
+                <p className="text-xs text-slate-400">Leave empty to auto-generate from short description</p>
               </div>
             </CardContent>
           </Card>
+        </div>
+      </div>
 
-          {/* Action buttons */}
-          <div className="flex gap-3">
-            <Button
-              onClick={() => handleSave("DRAFT")}
-              disabled={saving || !form.title || !form.companyId}
-              variant="outline"
-              className="flex-1"
-            >
-              {saving ? "Saving..." : "Save Draft"}
-            </Button>
-            <Button
-              onClick={() => handleSave("PUBLISHED")}
-              disabled={saving || !form.title || !form.companyId || !form.description}
-              className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
-            >
-              {saving ? "Publishing..." : "Publish"}
-            </Button>
-          </div>
+      {/* Full-width sections below the grid */}
+      <div className="mt-5 space-y-5">
+        {/* ── Company ── */}
+        <Card className="border border-slate-200 rounded-xl">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-[15px] font-semibold text-slate-800 flex items-center gap-2">
+              <Building2 className="size-4 text-teal-500" />
+              Company
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="relative" data-company-dropdown>
+              {loading ? (
+                <Skeleton className="h-10 w-full rounded-lg" />
+              ) : (
+                <>
+                  <Input
+                    value={form.companyName}
+                    onChange={(e) => {
+                      setForm({ ...form, companyName: e.target.value, companyId: "" })
+                      setCompanySearch(e.target.value)
+                      setShowCompanyList(true)
+                    }}
+                    onFocus={() => setShowCompanyList(true)}
+                    placeholder="Search company..."
+                    className="border-slate-200 focus:border-blue-400"
+                  />
+                  {showCompanyList && companySearch && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                      {filteredCompanies.length > 0 ? (
+                        filteredCompanies.map((company) => (
+                          <button
+                            key={company.id}
+                            className="w-full text-left px-3 py-2.5 text-sm hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0"
+                            onClick={() => {
+                              setForm({ ...form, companyId: company.id, companyName: company.name })
+                              setShowCompanyList(false)
+                            }}
+                          >
+                            <span className="text-slate-800">{company.name}</span>
+                            <span className="text-xs text-slate-400 ml-2">{company.slug}</span>
+                          </button>
+                        ))
+                      ) : (
+                        <p className="px-3 py-2.5 text-sm text-slate-400">No companies found</p>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* ── Tags & Categories ── */}
+        <Card className="border border-slate-200 rounded-xl">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-[15px] font-semibold text-slate-800 flex items-center gap-2">
+              <Tag className="size-4 text-sky-500" />
+              Tags &amp; Categories
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-slate-700">Categories</Label>
+                <Input
+                  value={form.categories}
+                  onChange={(e) => setForm({ ...form, categories: e.target.value })}
+                  placeholder="e.g. Engineering, Design"
+                  className="border-slate-200 focus:border-blue-400"
+                />
+                <p className="text-xs text-slate-400">Comma-separated values</p>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-slate-700">Tags</Label>
+                <Input
+                  value={form.tags}
+                  onChange={(e) => setForm({ ...form, tags: e.target.value })}
+                  placeholder="e.g. React, Remote, Urgent"
+                  className="border-slate-200 focus:border-blue-400"
+                />
+                <p className="text-xs text-slate-400">Comma-separated values</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Action buttons */}
+      <div className="mt-6 pt-6 border-t border-slate-200">
+        <div className="flex gap-3 justify-end">
+          <Button
+            variant="outline"
+            onClick={() => handleSave("DRAFT")}
+            disabled={saving || !form.title}
+            className="px-6"
+          >
+            Save Draft
+          </Button>
+          <Button
+            onClick={() => handleSave("PUBLISHED")}
+            disabled={saving || !form.title || !form.description}
+            className="px-8 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
+          >
+            Publish &rarr;
+          </Button>
         </div>
       </div>
     </div>

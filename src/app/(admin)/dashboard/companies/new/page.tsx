@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Skeleton } from "@/components/ui/skeleton"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
   Select,
@@ -18,6 +17,7 @@ import {
 } from "@/components/ui/select"
 import { toast } from "sonner"
 import { FileImportButton } from "@/components/file-import-button"
+import { Building2, Globe, Palette, Settings2, Search, ArrowLeft } from "lucide-react"
 
 export default function NewCompanyPage() {
   const router = useRouter()
@@ -72,7 +72,7 @@ export default function NewCompanyPage() {
         website: form.website || null,
         contactEmail: form.contactEmail || null,
         phoneNumber: form.phoneNumber || null,
-        socialLinks: Object.keys(socialLinks).length > 0 ? socialLinks : undefined,
+        socialLinks: Object.keys(socialLinks).length > 0 ? socialLinks : null,
         logo: form.logo || null,
         logoColor: form.logoColor || null,
         country: form.country || "Kenya",
@@ -108,65 +108,102 @@ export default function NewCompanyPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Create New Company</h1>
-          <p className="text-slate-500 mt-1">Add a new organization to the platform</p>
+    <div className="max-w-4xl mx-auto">
+      {/* Back link */}
+      <button
+        onClick={() => router.push("/dashboard/companies")}
+        className="text-sm text-slate-500 hover:text-slate-900 transition-colors inline-flex items-center gap-1.5 mb-6"
+      >
+        <ArrowLeft className="size-3.5" />
+        Back to Companies
+      </button>
+
+      {/* Page header */}
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-8">
+        <div className="flex items-start gap-3">
+          <div className="mt-1 p-2.5 bg-teal-50 text-teal-600 rounded-xl">
+            <Building2 className="size-5" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Create New Company</h1>
+            <p className="text-slate-500 mt-0.5">Add a new organization to the platform</p>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 flex-shrink-0">
           <FileImportButton
-            onDataExtracted={(data) => setForm((prev) => ({ ...prev, ...Object.fromEntries(Object.entries(data).filter(([, v]) => v !== undefined && v !== null).map(([k, v]) => [k, typeof v === 'number' ? String(v) : v])) }))}
+            onDataExtracted={(data) =>
+              setForm((prev) => ({
+                ...prev,
+                ...Object.fromEntries(
+                  Object.entries(data)
+                    .filter(([, v]) => v !== undefined && v !== null)
+                    .map(([k, v]) => [k, typeof v === "number" ? String(v) : v])
+                ),
+              }))
+            }
             variant="outline"
             size="sm"
           />
-          <Button variant="outline" onClick={() => router.push("/dashboard/companies")}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => router.push("/dashboard/companies")}
+          >
             Cancel
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left column */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Company Information */}
-          <Card className="border-0 shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-base">Company Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label>Company Name *</Label>
+      {/* Form sections */}
+      <div className="space-y-5">
+        {/* Company Information */}
+        <Card className="border border-slate-200 rounded-xl">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-[15px] font-semibold text-slate-800 flex items-center gap-2">
+              <Building2 className="size-4 text-teal-500" />
+              Company Information
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-slate-700">Name *</Label>
                 <Input
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   placeholder="e.g. Acme Inc."
-                  className="mt-1"
+                  className="border-slate-200"
                 />
               </div>
-              <div>
-                <Label>Industry *</Label>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-slate-700">Industry *</Label>
                 <Input
                   value={form.industry}
                   onChange={(e) => setForm({ ...form, industry: e.target.value })}
                   placeholder="e.g. Technology, Healthcare, Finance"
-                  className="mt-1"
+                  className="border-slate-200"
                 />
               </div>
-              <div>
-                <Label>Description *</Label>
-                <Textarea
-                  value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  placeholder="Tell us about this company..."
-                  className="mt-1"
-                  rows={8}
-                />
-              </div>
-              <div>
-                <Label>Organization Type</Label>
-                <Select value={form.organizationType} onValueChange={(v) => setForm({ ...form, organizationType: v })}>
-                  <SelectTrigger className="mt-1">
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium text-slate-700">Description *</Label>
+              <Textarea
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                placeholder="Tell us about this company..."
+                className="border-slate-200"
+                rows={6}
+              />
+              <p className="text-xs text-slate-400">A brief overview of the company&apos;s mission and activities</p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-slate-700">Organization Type</Label>
+                <Select
+                  value={form.organizationType}
+                  onValueChange={(v) => setForm({ ...form, organizationType: v })}
+                >
+                  <SelectTrigger className="border-slate-200">
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -183,10 +220,13 @@ export default function NewCompanyPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label>Company Size</Label>
-                <Select value={form.size} onValueChange={(v) => setForm({ ...form, size: v })}>
-                  <SelectTrigger className="mt-1">
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-slate-700">Company Size</Label>
+                <Select
+                  value={form.size}
+                  onValueChange={(v) => setForm({ ...form, size: v })}
+                >
+                  <SelectTrigger className="border-slate-200">
                     <SelectValue placeholder="Select size" />
                   </SelectTrigger>
                   <SelectContent>
@@ -199,237 +239,262 @@ export default function NewCompanyPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label>Website</Label>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-slate-700">Website</Label>
                 <Input
                   type="url"
                   value={form.website}
                   onChange={(e) => setForm({ ...form, website: e.target.value })}
                   placeholder="https://example.com"
-                  className="mt-1"
+                  className="border-slate-200"
                 />
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <Label>Contact Email</Label>
-                  <Input
-                    type="email"
-                    value={form.contactEmail}
-                    onChange={(e) => setForm({ ...form, contactEmail: e.target.value })}
-                    placeholder="contact@example.com"
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <Label>Phone Number</Label>
-                  <Input
-                    value={form.phoneNumber}
-                    onChange={(e) => setForm({ ...form, phoneNumber: e.target.value })}
-                    placeholder="+254 700 000 000"
-                    className="mt-1"
-                  />
-                </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-slate-700">Contact Email</Label>
+                <Input
+                  type="email"
+                  value={form.contactEmail}
+                  onChange={(e) => setForm({ ...form, contactEmail: e.target.value })}
+                  placeholder="contact@example.com"
+                  className="border-slate-200"
+                />
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Social Links */}
-          <Card className="border-0 shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-base">Social Links</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>Facebook URL</Label>
-                  <Input
-                    value={form.facebook}
-                    onChange={(e) => setForm({ ...form, facebook: e.target.value })}
-                    placeholder="https://facebook.com/company"
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <Label>Twitter URL</Label>
-                  <Input
-                    value={form.twitter}
-                    onChange={(e) => setForm({ ...form, twitter: e.target.value })}
-                    placeholder="https://twitter.com/company"
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <Label>LinkedIn URL</Label>
-                  <Input
-                    value={form.linkedin}
-                    onChange={(e) => setForm({ ...form, linkedin: e.target.value })}
-                    placeholder="https://linkedin.com/company"
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <Label>Instagram URL</Label>
-                  <Input
-                    value={form.instagram}
-                    onChange={(e) => setForm({ ...form, instagram: e.target.value })}
-                    placeholder="https://instagram.com/company"
-                    className="mt-1"
-                  />
-                </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-slate-700">Phone Number</Label>
+                <Input
+                  value={form.phoneNumber}
+                  onChange={(e) => setForm({ ...form, phoneNumber: e.target.value })}
+                  placeholder="+254 700 000 000"
+                  className="border-slate-200"
+                />
               </div>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </CardContent>
+        </Card>
 
-        {/* Right column (sidebar) */}
-        <div className="space-y-6">
+        {/* Social Links */}
+        <Card className="border border-slate-200 rounded-xl">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-[15px] font-semibold text-slate-800 flex items-center gap-2">
+              <Globe className="size-4 text-sky-500" />
+              Social Links
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-slate-700">Facebook URL</Label>
+                <Input
+                  value={form.facebook}
+                  onChange={(e) => setForm({ ...form, facebook: e.target.value })}
+                  placeholder="https://facebook.com/company"
+                  className="border-slate-200"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-slate-700">Twitter URL</Label>
+                <Input
+                  value={form.twitter}
+                  onChange={(e) => setForm({ ...form, twitter: e.target.value })}
+                  placeholder="https://twitter.com/company"
+                  className="border-slate-200"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-slate-700">LinkedIn URL</Label>
+                <Input
+                  value={form.linkedin}
+                  onChange={(e) => setForm({ ...form, linkedin: e.target.value })}
+                  placeholder="https://linkedin.com/company"
+                  className="border-slate-200"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-slate-700">Instagram URL</Label>
+                <Input
+                  value={form.instagram}
+                  onChange={(e) => setForm({ ...form, instagram: e.target.value })}
+                  placeholder="https://instagram.com/company"
+                  className="border-slate-200"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Branding & Location + Settings (2-col grid) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           {/* Branding & Location */}
-          <Card className="border-0 shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-base">Branding &amp; Location</CardTitle>
+          <Card className="border border-slate-200 rounded-xl">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-[15px] font-semibold text-slate-800 flex items-center gap-2">
+                <Palette className="size-4 text-indigo-500" />
+                Branding &amp; Location
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <div>
-                <Label>Logo URL</Label>
+            <CardContent className="space-y-4">
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-slate-700">Logo URL</Label>
                 <Input
                   value={form.logo}
                   onChange={(e) => setForm({ ...form, logo: e.target.value })}
                   placeholder="https://example.com/logo.png"
-                  className="mt-1"
+                  className="border-slate-200"
                 />
+                <p className="text-xs text-slate-400">Direct link to the company logo image</p>
               </div>
-              <div>
-                <Label>Logo Color</Label>
-                <div className="flex items-center gap-3 mt-1">
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-slate-700">Logo Color</Label>
+                <div className="flex items-center gap-3">
                   <Input
                     type="color"
                     value={form.logoColor || "#000000"}
                     onChange={(e) => setForm({ ...form, logoColor: e.target.value })}
-                    className="w-10 h-10 p-1 cursor-pointer"
+                    className="w-10 h-10 p-1 cursor-pointer rounded-lg border-slate-200"
                   />
                   <Input
                     value={form.logoColor}
                     onChange={(e) => setForm({ ...form, logoColor: e.target.value })}
                     placeholder="#000000"
-                    className="flex-1"
+                    className="flex-1 border-slate-200"
                   />
                 </div>
               </div>
-              <div className="border-t my-4" />
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>Country</Label>
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium text-slate-700">Country</Label>
                   <Input
                     value={form.country}
                     onChange={(e) => setForm({ ...form, country: e.target.value })}
-                    className="mt-1"
+                    className="border-slate-200"
                   />
                 </div>
-                <div>
-                  <Label>County</Label>
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium text-slate-700">County</Label>
                   <Input
                     value={form.county}
                     onChange={(e) => setForm({ ...form, county: e.target.value })}
                     placeholder="e.g. Nairobi"
-                    className="mt-1"
+                    className="border-slate-200"
                   />
                 </div>
               </div>
-              <div>
-                <Label>Town</Label>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-slate-700">Town</Label>
                 <Input
                   value={form.town}
                   onChange={(e) => setForm({ ...form, town: e.target.value })}
                   placeholder="e.g. Westlands"
-                  className="mt-1"
+                  className="border-slate-200"
                 />
               </div>
             </CardContent>
           </Card>
 
           {/* Settings */}
-          <Card className="border-0 shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-base">Settings</CardTitle>
+          <Card className="border border-slate-200 rounded-xl">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-[15px] font-semibold text-slate-800 flex items-center gap-2">
+                <Settings2 className="size-4 text-amber-500" />
+                Settings
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="flex items-center gap-2">
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-2.5">
                 <Checkbox
                   checked={form.isVerified}
                   onCheckedChange={(checked) => setForm({ ...form, isVerified: !!checked })}
+                  className="data-[state=checked]:bg-teal-600 data-[state=checked]:border-teal-600"
                 />
-                <Label>Verified</Label>
+                <Label className="text-sm text-slate-700 cursor-pointer">Verified</Label>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2.5">
                 <Checkbox
                   checked={form.isFeatured}
                   onCheckedChange={(checked) => setForm({ ...form, isFeatured: !!checked })}
+                  className="data-[state=checked]:bg-teal-600 data-[state=checked]:border-teal-600"
                 />
-                <Label>Featured</Label>
+                <Label className="text-sm text-slate-700 cursor-pointer">Featured</Label>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2.5">
                 <Checkbox
                   checked={form.isActive}
                   onCheckedChange={(checked) => setForm({ ...form, isActive: !!checked })}
+                  className="data-[state=checked]:bg-teal-600 data-[state=checked]:border-teal-600"
                 />
-                <Label>Active</Label>
+                <Label className="text-sm text-slate-700 cursor-pointer">Active</Label>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2.5">
                 <Checkbox
                   checked={form.noIndex}
                   onCheckedChange={(checked) => setForm({ ...form, noIndex: !!checked })}
+                  className="data-[state=checked]:bg-teal-600 data-[state=checked]:border-teal-600"
                 />
-                <Label>No Index (exclude from search engines)</Label>
+                <Label className="text-sm text-slate-700 cursor-pointer">No Index</Label>
               </div>
             </CardContent>
           </Card>
+        </div>
 
-          {/* SEO (compact) */}
-          <Card className="border-0 shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-base">SEO</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div>
-                <Label>Meta Title</Label>
+        {/* SEO */}
+        <Card className="border border-slate-200 rounded-xl">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-[15px] font-semibold text-slate-800 flex items-center gap-2">
+              <Search className="size-4 text-rose-500" />
+              SEO
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-slate-700">Meta Title</Label>
                 <Input
                   value={form.metaTitle}
                   onChange={(e) => setForm({ ...form, metaTitle: e.target.value })}
                   placeholder="Custom meta title for search engines"
-                  className="mt-1"
+                  className="border-slate-200"
                 />
               </div>
-              <div>
-                <Label>Meta Description</Label>
-                <Textarea
-                  value={form.metaDescription}
-                  onChange={(e) => setForm({ ...form, metaDescription: e.target.value })}
-                  placeholder="Custom meta description for search engines"
-                  className="mt-1"
-                  rows={2}
-                />
-              </div>
-              <div>
-                <Label>OG Image URL</Label>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-slate-700">OG Image URL</Label>
                 <Input
                   type="url"
                   value={form.ogImage}
                   onChange={(e) => setForm({ ...form, ogImage: e.target.value })}
                   placeholder="https://example.com/og-image.jpg"
-                  className="mt-1"
+                  className="border-slate-200"
                 />
               </div>
-            </CardContent>
-          </Card>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium text-slate-700">Meta Description</Label>
+              <Textarea
+                value={form.metaDescription}
+                onChange={(e) => setForm({ ...form, metaDescription: e.target.value })}
+                placeholder="Custom meta description for search engines"
+                className="border-slate-200"
+                rows={3}
+              />
+              <p className="text-xs text-slate-400">Recommended length: 120-160 characters</p>
+            </div>
+          </CardContent>
+        </Card>
 
-          {/* Action button */}
-          <div className="flex gap-3">
+        {/* Action buttons */}
+        <div className="mt-6 pt-6 border-t border-slate-200">
+          <div className="flex gap-3 justify-end">
             <Button
               onClick={handleSave}
-              disabled={saving || !form.name.trim() || !form.industry.trim() || !form.description.trim()}
-              className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+              disabled={
+                saving || !form.name.trim() || !form.industry.trim() || !form.description.trim()
+              }
+              className="px-8 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
             >
-              {saving ? "Saving..." : "Save"}
+              {saving ? "Saving..." : "Save Company →"}
             </Button>
           </div>
         </div>
