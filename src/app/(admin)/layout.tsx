@@ -277,4 +277,5 @@ const AdminContext = createContext<{ sidebarOpen: boolean; setSidebarOpen: (v: b
   setSidebarOpen: () => {},
 })
 
-export { AdminShell, AdminContext }
+export default AdminShell
+export { AdminContext }
