@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+import { TiptapEditor } from "@/components/tiptap-editor"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
   Select,
@@ -187,12 +187,10 @@ export default function NewCompanyPage() {
             </div>
             <div className="space-y-1.5">
               <Label className="text-sm font-medium text-slate-700">Description *</Label>
-              <Textarea
-                value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
+              <TiptapEditor
+                content={form.description}
+                onChange={(html) => setForm({ ...form, description: html })}
                 placeholder="Tell us about this company..."
-                className="border-slate-200"
-                rows={6}
               />
               <p className="text-xs text-slate-400">A brief overview of the company&apos;s mission and activities</p>
             </div>

@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+import { TiptapEditor } from "@/components/tiptap-editor"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -178,32 +178,28 @@ export default function NewJobPage() {
               </div>
               <div className="space-y-1.5">
                 <Label className="text-sm font-medium text-slate-700">Short Description</Label>
-                <Textarea
-                  value={form.shortDescription}
-                  onChange={(e) => setForm({ ...form, shortDescription: e.target.value })}
-                  placeholder="Brief summary of the job (1-2 sentences)"
-                  className="border-slate-200 focus:border-blue-400 resize-none"
-                  rows={2}
+                <TiptapEditor
+                  content={form.shortDescription}
+                  onChange={(html) => setForm({ ...form, shortDescription: html })}
+                  placeholder="Brief summary of the job (1-2 sentences)..."
+                  compact
                 />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-sm font-medium text-slate-700">Description *</Label>
-                <Textarea
-                  value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                <TiptapEditor
+                  content={form.description}
+                  onChange={(html) => setForm({ ...form, description: html })}
                   placeholder="Full job description with responsibilities, requirements, etc."
-                  className="border-slate-200 focus:border-blue-400 resize-none"
-                  rows={12}
                 />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-sm font-medium text-slate-700">How to Apply</Label>
-                <Textarea
-                  value={form.howToApply}
-                  onChange={(e) => setForm({ ...form, howToApply: e.target.value })}
-                  placeholder="Instructions for applicants"
-                  className="border-slate-200 focus:border-blue-400 resize-none"
-                  rows={3}
+                <TiptapEditor
+                  content={form.howToApply}
+                  onChange={(html) => setForm({ ...form, howToApply: html })}
+                  placeholder="Instructions for applicants..."
+                  compact
                 />
               </div>
               <div className="space-y-1.5">

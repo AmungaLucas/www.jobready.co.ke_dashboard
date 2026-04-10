@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+import { TiptapEditor } from "@/components/tiptap-editor"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
@@ -219,14 +219,11 @@ export default function NewOpportunityPage() {
                 <Label className="text-sm font-medium text-slate-700">
                   Excerpt
                 </Label>
-                <Textarea
-                  value={form.excerpt}
-                  onChange={(e) =>
-                    setForm({ ...form, excerpt: e.target.value })
-                  }
-                  placeholder="Brief summary of the opportunity (1-2 sentences)"
-                  className="border-slate-200"
-                  rows={2}
+                <TiptapEditor
+                  content={form.excerpt}
+                  onChange={(html) => setForm({ ...form, excerpt: html })}
+                  placeholder="Brief summary of the opportunity (1-2 sentences)..."
+                  compact
                 />
               </div>
 
@@ -234,14 +231,10 @@ export default function NewOpportunityPage() {
                 <Label className="text-sm font-medium text-slate-700">
                   Description <span className="text-rose-400">*</span>
                 </Label>
-                <Textarea
-                  value={form.description}
-                  onChange={(e) =>
-                    setForm({ ...form, description: e.target.value })
-                  }
+                <TiptapEditor
+                  content={form.description}
+                  onChange={(html) => setForm({ ...form, description: html })}
                   placeholder="Full opportunity description with details, requirements, benefits, etc."
-                  className="border-slate-200 min-h-[220px]"
-                  rows={12}
                 />
               </div>
 
@@ -249,14 +242,11 @@ export default function NewOpportunityPage() {
                 <Label className="text-sm font-medium text-slate-700">
                   How to Apply
                 </Label>
-                <Textarea
-                  value={form.howToApply}
-                  onChange={(e) =>
-                    setForm({ ...form, howToApply: e.target.value })
-                  }
-                  placeholder="Instructions for applicants"
-                  className="border-slate-200"
-                  rows={3}
+                <TiptapEditor
+                  content={form.howToApply}
+                  onChange={(html) => setForm({ ...form, howToApply: html })}
+                  placeholder="Instructions for applicants..."
+                  compact
                 />
               </div>
 
