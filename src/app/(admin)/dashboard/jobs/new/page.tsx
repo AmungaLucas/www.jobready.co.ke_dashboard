@@ -14,7 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
 import { FileImportButton } from "@/components/file-import-button"
-import { Briefcase, MapPin, Banknote, Building2, Settings2, Tag, Search, ArrowLeft, Plus } from "lucide-react"
+import { Briefcase, MapPin, Banknote, Building2, Settings2, Tag, Search, ArrowLeft, Plus, X } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -34,11 +34,12 @@ export default function NewJobPage() {
   const [showCreateCompany, setShowCreateCompany] = useState(false)
   const [newCompany, setNewCompany] = useState({ name: "", industry: "", description: "" })
   const [creatingCompany, setCreatingCompany] = useState(false)
+  const [pickerCategory, setPickerCategory] = useState("")
   const [form, setForm] = useState({
     title: "",
     description: "",
     featuredImage: "",
-    categories: "",
+    categories: [] as { category: string; subcategory: string }[],
     tags: "",
     companyId: "",
     companyName: "",
@@ -92,9 +93,7 @@ export default function NewJobPage() {
     try {
       const payload = {
         ...form,
-        categories: form.categories
-          ? form.categories.split(",").map((s) => s.trim()).filter(Boolean)
-          : null,
+        categories: form.categories.length > 0 ? form.categories : null,
         tags: form.tags
           ? form.tags.split(",").map((s) => s.trim()).filter(Boolean)
           : null,
@@ -560,13 +559,76 @@ export default function NewJobPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label className="text-sm font-medium text-slate-700">Categories</Label>
-                <Input
-                  value={form.categories}
-                  onChange={(e) => setForm({ ...form, categories: e.target.value })}
-                  placeholder="e.g. Engineering, Design"
-                  className="border-slate-200 focus:border-blue-400"
-                />
-                <p className="text-xs text-slate-400">Comma-separated values</p>
+                <div className="flex gap-2">
+                  <Select
+                    value=""
+                    onValueChange={(v) => {
+                      const sub = jobCategory.find((c) => c.value === v)
+                      if (sub && sub.subcategories.length > 0) {
+                        setPickerCategory(v)
+                      } else {
+                        setForm((prev) => ({
+                          ...prev,
+                          categories: [...prev.categories, { category: v, subcategory: "" }],
+                        }))
+                        setPickerCategory("")
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="border-slate-200 flex-1"><SelectValue placeholder="Category" /></SelectTrigger>
+                    <SelectContent>
+                      {jobCategory.map((cat) => (
+                        <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {pickerCategory && (
+                    <Select
+                      value=""
+                      onValueChange={(v) => {
+                        setForm((prev) => ({
+                          ...prev,
+                          categories: [...prev.categories, { category: pickerCategory, subcategory: v }],
+                        }))
+                        setPickerCategory("")
+                      }}
+                    >
+                      <SelectTrigger className="border-slate-200 flex-1"><SelectValue placeholder="Subcategory" /></SelectTrigger>
+                      <SelectContent>
+                        {jobCategory
+                          .find((c) => c.value === pickerCategory)
+                          ?.subcategories.map((sub) => (
+                            <SelectItem key={sub.value} value={sub.value}>{sub.label}</SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+                {form.categories.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {form.categories.map((item, i) => {
+                      const catLabel = jobCategory.find((c) => c.value === item.category)?.label || item.category
+                      const subLabel = jobCategory
+                        .find((c) => c.value === item.category)
+                        ?.subcategories.find((s) => s.value === item.subcategory)?.label || item.subcategory
+                      return (
+                        <span
+                          key={i}
+                          className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded-md text-xs"
+                        >
+                          {subLabel ? `${catLabel} › ${subLabel}` : catLabel}
+                          <button
+                            type="button"
+                            onClick={() => setForm((prev) => ({ ...prev, categories: prev.categories.filter((_, idx) => idx !== i) }))}
+                            className="hover:text-blue-900"
+                          >
+                            <X className="size-3" />
+                          </button>
+                        </span>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
               <div className="space-y-1.5">
                 <Label className="text-sm font-medium text-slate-700">Tags</Label>
