@@ -27,7 +27,16 @@ import {
   ArrowLeft,
   Megaphone,
   Globe,
+  Plus,
 } from "lucide-react"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 const opportunityTypes = [
   "SCHOLARSHIP",
@@ -55,10 +64,12 @@ export default function EditOpportunityPage() {
   const [saving, setSaving] = useState(false)
   const [companySearch, setCompanySearch] = useState("")
   const [showCompanyList, setShowCompanyList] = useState(false)
+  const [showCreateCompany, setShowCreateCompany] = useState(false)
+  const [newCompany, setNewCompany] = useState({ name: "", industry: "", description: "" })
+  const [creatingCompany, setCreatingCompany] = useState(false)
   const [form, setForm] = useState({
     title: "",
     description: "",
-    excerpt: "",
     featuredImage: "",
     tags: "",
     companyId: "",
@@ -90,7 +101,6 @@ export default function EditOpportunityPage() {
         setForm({
           title: opportunity.title || "",
           description: opportunity.description || "",
-          excerpt: opportunity.excerpt || "",
           featuredImage: opportunity.featuredImage || "",
           tags: Array.isArray(opportunity.tags)
             ? opportunity.tags.join(", ")
@@ -258,21 +268,6 @@ export default function EditOpportunityPage() {
                   }
                   placeholder="e.g. Google Africa PhD Fellowship 2025"
                   className="border-slate-200"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-sm font-medium text-slate-700">
-                  Excerpt
-                </Label>
-                <Textarea
-                  value={form.excerpt}
-                  onChange={(e) =>
-                    setForm({ ...form, excerpt: e.target.value })
-                  }
-                  placeholder="Brief summary of the opportunity (1-2 sentences)"
-                  className="border-slate-200"
-                  rows={2}
                 />
               </div>
 
@@ -504,9 +499,17 @@ export default function EditOpportunityPage() {
                       </button>
                     ))
                   ) : (
-                    <p className="px-4 py-3 text-sm text-slate-400">
-                      No companies found
-                    </p>
+                    <div className="px-4 py-3 text-sm">
+                      <p className="text-slate-400 mb-2">No companies found</p>
+                      <button
+                        type="button"
+                        onClick={() => setShowCreateCompany(true)}
+                        className="inline-flex items-center gap-1.5 text-violet-600 hover:text-violet-700 text-sm font-medium transition-colors"
+                      >
+                        <Plus className="size-3.5" />
+                        Create new company
+                      </button>
+                    </div>
                   )}
                 </div>
               )}
@@ -571,6 +574,89 @@ export default function EditOpportunityPage() {
           </CardContent>
         </Card>
       </div>
+
+        {/* Create Company Dialog */}
+        <Dialog open={showCreateCompany} onOpenChange={setShowCreateCompany}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Create New Company</DialogTitle>
+              <DialogDescription>Add a new company to the platform. You can edit details later.</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-slate-700">Company Name *</Label>
+                <Input
+                  value={newCompany.name}
+                  onChange={(e) => setNewCompany({ ...newCompany, name: e.target.value })}
+                  placeholder="e.g. Acme Inc."
+                  className="border-slate-200"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-slate-700">Industry *</Label>
+                <Input
+                  value={newCompany.industry}
+                  onChange={(e) => setNewCompany({ ...newCompany, industry: e.target.value })}
+                  placeholder="e.g. Technology, Healthcare"
+                  className="border-slate-200"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-slate-700">Description *</Label>
+                <Textarea
+                  value={newCompany.description}
+                  onChange={(e) => setNewCompany({ ...newCompany, description: e.target.value })}
+                  placeholder="Brief description of the company..."
+                  className="border-slate-200 resize-none"
+                  rows={3}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowCreateCompany(false)}>Cancel</Button>
+              <Button
+                onClick={async () => {
+                  if (!newCompany.name.trim() || !newCompany.industry.trim() || !newCompany.description.trim()) {
+                    toast.error("Name, industry, and description are required")
+                    return
+                  }
+                  setCreatingCompany(true)
+                  try {
+                    const res = await fetch("/api/admin/companies", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        name: newCompany.name,
+                        industry: newCompany.industry,
+                        description: newCompany.description,
+                      }),
+                    })
+                    if (res.ok) {
+                      const company = await res.json()
+                      setCompanies((prev) => [...prev, { id: company.id, name: company.name, slug: company.slug }])
+                      setForm({ ...form, companyId: company.id, companyName: company.name })
+                      setShowCreateCompany(false)
+                      setShowCompanyList(false)
+                      setNewCompany({ name: "", industry: "", description: "" })
+                      toast.success("Company created and selected!")
+                    } else {
+                      const err = await res.json()
+                      toast.error(err.error || "Failed to create company")
+                    }
+                  } catch {
+                    toast.error("Failed to create company")
+                  } finally {
+                    setCreatingCompany(false)
+                  }
+                }}
+                disabled={creatingCompany}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              >
+                {creatingCompany ? "Creating..." : "Create & Select"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
       {/* Action buttons */}
       <div className="mt-6 pt-6 border-t border-slate-200">
