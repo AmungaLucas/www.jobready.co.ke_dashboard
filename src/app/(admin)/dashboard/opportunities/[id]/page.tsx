@@ -37,7 +37,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { opportunityType, jobStatus } from "@/constants/enums"
+import { opportunityType, jobStatus, organizationIndustry } from "@/constants/enums"
 
 export default function EditOpportunityPage() {
   const router = useRouter()
@@ -581,12 +581,14 @@ export default function EditOpportunityPage() {
               </div>
               <div className="space-y-1.5">
                 <Label className="text-sm font-medium text-slate-700">Industry *</Label>
-                <Input
-                  value={newCompany.industry}
-                  onChange={(e) => setNewCompany({ ...newCompany, industry: e.target.value })}
-                  placeholder="e.g. Technology, Healthcare"
-                  className="border-slate-200"
-                />
+                <Select value={newCompany.industry} onValueChange={(v) => setNewCompany({ ...newCompany, industry: v })}>
+                  <SelectTrigger className="border-slate-200"><SelectValue placeholder="Select industry" /></SelectTrigger>
+                  <SelectContent>
+                    {organizationIndustry.map((item) => (
+                      <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-1.5">
                 <Label className="text-sm font-medium text-slate-700">Description *</Label>

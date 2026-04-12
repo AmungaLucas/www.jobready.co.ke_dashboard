@@ -19,7 +19,7 @@ import {
 import { toast } from "sonner"
 import { FileImportButton } from "@/components/file-import-button"
 import { Building2, Globe, Palette, Settings2, Search, ArrowLeft } from "lucide-react"
-import { organizationType, organizationIndustry, organizationSize } from "@/constants/enums"
+import { organizationType, organizationIndustry, organizationSize, organizationLocation } from "@/constants/enums"
 
 export default function EditCompanyPage() {
   const router = useRouter()
@@ -422,20 +422,25 @@ export default function EditCompanyPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label className="text-sm font-medium text-slate-700">Country</Label>
-                  <Input
-                    value={form.country}
-                    onChange={(e) => setForm({ ...form, country: e.target.value })}
-                    className="border-slate-200"
-                  />
+                  <Select value={form.country} onValueChange={(v) => setForm({ ...form, country: v, county: "", town: "" })}>
+                    <SelectTrigger className="border-slate-200"><SelectValue placeholder="Select country" /></SelectTrigger>
+                    <SelectContent>
+                      {organizationLocation.map((loc) => (
+                        <SelectItem key={loc.code} value={loc.name}>{loc.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-sm font-medium text-slate-700">County</Label>
-                  <Input
-                    value={form.county}
-                    onChange={(e) => setForm({ ...form, county: e.target.value })}
-                    placeholder="e.g. Nairobi"
-                    className="border-slate-200"
-                  />
+                  <Label className="text-sm font-medium text-slate-700">County / Region</Label>
+                  <Select value={form.county} onValueChange={(v) => setForm({ ...form, county: v, town: "" })}>
+                    <SelectTrigger className="border-slate-200"><SelectValue placeholder="Select county" /></SelectTrigger>
+                    <SelectContent>
+                      {organizationLocation.find((c) => c.name === form.country)?.regions.map((region) => (
+                        <SelectItem key={region} value={region}>{region}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               <div className="space-y-1.5">

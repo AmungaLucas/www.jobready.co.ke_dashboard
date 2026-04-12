@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { TiptapEditor } from "@/components/tiptap-editor"
-import { employmentType, experienceLevel, organizationIndustry, currencies, jobStatus, jobCategory } from "@/constants/enums"
+import { employmentType, experienceLevel, organizationIndustry, currencies, jobStatus, jobCategory, organizationLocation } from "@/constants/enums"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -283,20 +283,25 @@ export default function NewJobPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label className="text-sm font-medium text-slate-700">Country</Label>
-                  <Input
-                    value={form.country}
-                    onChange={(e) => setForm({ ...form, country: e.target.value })}
-                    className="border-slate-200 focus:border-blue-400"
-                  />
+                  <Select value={form.country} onValueChange={(v) => setForm({ ...form, country: v, county: "", town: "" })}>
+                    <SelectTrigger className="border-slate-200 focus:border-blue-400"><SelectValue placeholder="Select country" /></SelectTrigger>
+                    <SelectContent>
+                      {organizationLocation.map((loc) => (
+                        <SelectItem key={loc.code} value={loc.name}>{loc.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-sm font-medium text-slate-700">County</Label>
-                  <Input
-                    value={form.county}
-                    onChange={(e) => setForm({ ...form, county: e.target.value })}
-                    placeholder="e.g. Nairobi"
-                    className="border-slate-200 focus:border-blue-400"
-                  />
+                  <Label className="text-sm font-medium text-slate-700">County / Region</Label>
+                  <Select value={form.county} onValueChange={(v) => setForm({ ...form, county: v, town: "" })}>
+                    <SelectTrigger className="border-slate-200 focus:border-blue-400"><SelectValue placeholder="Select county" /></SelectTrigger>
+                    <SelectContent>
+                      {organizationLocation.find((c) => c.name === form.country)?.regions.map((region) => (
+                        <SelectItem key={region} value={region}>{region}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
@@ -597,12 +602,14 @@ export default function NewJobPage() {
             </div>
             <div className="space-y-1.5">
               <Label className="text-sm font-medium text-slate-700">Industry *</Label>
-              <Input
-                value={newCompany.industry}
-                onChange={(e) => setNewCompany({ ...newCompany, industry: e.target.value })}
-                placeholder="e.g. Technology, Healthcare"
-                className="border-slate-200"
-              />
+              <Select value={newCompany.industry} onValueChange={(v) => setNewCompany({ ...newCompany, industry: v })}>
+                <SelectTrigger className="border-slate-200"><SelectValue placeholder="Select industry" /></SelectTrigger>
+                <SelectContent>
+                  {organizationIndustry.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1.5">
               <Label className="text-sm font-medium text-slate-700">Description *</Label>
