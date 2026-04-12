@@ -4,6 +4,7 @@ import * as React from "react"
 import { Button } from "@/components/ui/button"
 import { Upload, Loader2 } from "lucide-react"
 import { toast } from "sonner"
+import { cn } from "@/lib/utils"
 
 // ---------------------------------------------------------------------------
 // Types
@@ -320,7 +321,7 @@ export function FileImportButton({
   }
 
   return (
-    <div className={className}>
+    <div className={cn("inline-flex flex-col items-start", className)}>
       <Button
         type="button"
         variant={variant}
@@ -344,9 +345,9 @@ export function FileImportButton({
         onChange={handleChange}
       />
 
-      <p className="mt-1.5 text-xs text-muted-foreground">
+      <span className="mt-1 text-[11px] leading-tight text-muted-foreground">
         JSON, DOCX, PDF, or MD
-      </p>
+      </span>
     </div>
   )
 }
