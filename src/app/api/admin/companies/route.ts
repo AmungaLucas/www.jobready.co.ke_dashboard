@@ -10,65 +10,80 @@ async function verifyAdmin(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const admin = await verifyAdmin(req)
-  if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  try {
+    const admin = await verifyAdmin(req)
+    if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const body = await req.json()
-  const { name, ...data } = body
-  if (!name) return NextResponse.json({ error: "Name is required" }, { status: 400 })
+    const body = await req.json()
+    const { name, ...data } = body
+    if (!name) return NextResponse.json({ error: "Name is required" }, { status: 400 })
 
-  const slug = name
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/[\s_]+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "")
+    const slug = name
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9\s-]/g, "")
+      .replace(/[\s_]+/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "")
 
-  const item = await db.company.create({
-    data: {
-      name,
-      slug,
-      ...data,
-    },
-  })
+    const item = await db.company.create({
+      data: {
+        name,
+        slug,
+        ...data,
+      },
+    })
 
-  return NextResponse.json(item, { status: 201 })
+    return NextResponse.json(item, { status: 201 })
+  } catch (error) {
+    console.error("[POST /api/admin/companies]", error)
+    return NextResponse.json({ error: "Failed to create company" }, { status: 500 })
+  }
 }
 
 export async function GET(req: NextRequest) {
-  const admin = await verifyAdmin(req)
-  if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  try {
+    const admin = await verifyAdmin(req)
+    if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const { searchParams } = new URL(req.url)
-  const page = parseInt(searchParams.get("page") || "1")
-  const limit = parseInt(searchParams.get("limit") || "20")
-  const search = searchParams.get("search") || ""
+    const { searchParams } = new URL(req.url)
+    const page = parseInt(searchParams.get("page") || "1")
+    const limit = parseInt(searchParams.get("limit") || "20")
+    const search = searchParams.get("search") || ""
 
-  const where: Record<string, unknown> = {}
-  if (search) where.name = { contains: search }
+    const where: Record<string, unknown> = {}
+    if (search) where.name = { contains: search }
 
-  const [items, total] = await Promise.all([
-    db.company.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      skip: (page - 1) * limit,
-      take: limit,
-    }),
-    db.company.count({ where }),
-  ])
+    const [items, total] = await Promise.all([
+      db.company.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      db.company.count({ where }),
+    ])
 
-  return NextResponse.json({ items, total, page, totalPages: Math.ceil(total / limit) })
+    return NextResponse.json({ items, total, page, totalPages: Math.ceil(total / limit) })
+  } catch (error) {
+    console.error("[GET /api/admin/companies]", error)
+    return NextResponse.json({ error: "Failed to fetch companies" }, { status: 500 })
+  }
 }
 
 export async function PATCH(req: NextRequest) {
-  const admin = await verifyAdmin(req)
-  if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  try {
+    const admin = await verifyAdmin(req)
+    if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const body = await req.json()
-  const { id, ...data } = body
-  if (!id) return NextResponse.json({ error: "ID required" }, { status: 400 })
+    const body = await req.json()
+    const { id, ...data } = body
+    if (!id) return NextResponse.json({ error: "ID required" }, { status: 400 })
 
-  const item = await db.company.update({ where: { id }, data })
-  return NextResponse.json(item)
+    const item = await db.company.update({ where: { id }, data })
+    return NextResponse.json(item)
+  } catch (error) {
+    console.error("[PATCH /api/admin/companies]", error)
+    return NextResponse.json({ error: "Failed to update company" }, { status: 500 })
+  }
 }
