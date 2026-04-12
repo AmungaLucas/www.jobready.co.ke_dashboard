@@ -38,7 +38,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Textarea } from "@/components/ui/textarea"
 
 const opportunityTypes = [
   "SCHOLARSHIP",
