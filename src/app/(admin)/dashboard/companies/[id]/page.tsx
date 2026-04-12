@@ -19,6 +19,7 @@ import {
 import { toast } from "sonner"
 import { FileImportButton } from "@/components/file-import-button"
 import { Building2, Globe, Palette, Settings2, Search, ArrowLeft } from "lucide-react"
+import { organizationType, organizationIndustry, organizationSize } from "@/constants/enums"
 
 export default function EditCompanyPage() {
   const router = useRouter()
@@ -234,12 +235,19 @@ export default function EditCompanyPage() {
               </div>
               <div className="space-y-1.5">
                 <Label className="text-sm font-medium text-slate-700">Industry *</Label>
-                <Input
+                <Select
                   value={form.industry}
-                  onChange={(e) => setForm({ ...form, industry: e.target.value })}
-                  placeholder="e.g. Technology, Healthcare, Finance"
-                  className="border-slate-200"
-                />
+                  onValueChange={(v) => setForm({ ...form, industry: v })}
+                >
+                  <SelectTrigger className="border-slate-200">
+                    <SelectValue placeholder="Select industry" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {organizationIndustry.map((item) => (
+                      <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div className="space-y-1.5">
@@ -264,16 +272,9 @@ export default function EditCompanyPage() {
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="PRIVATE_COMPANY">Private Company</SelectItem>
-                    <SelectItem value="PUBLIC_COMPANY">Public Company</SelectItem>
-                    <SelectItem value="NGO">NGO</SelectItem>
-                    <SelectItem value="GOVERNMENT">Government</SelectItem>
-                    <SelectItem value="STARTUP">Startup</SelectItem>
-                    <SelectItem value="SOLE_PROPRIETORSHIP">Sole Proprietorship</SelectItem>
-                    <SelectItem value="PARTNERSHIP">Partnership</SelectItem>
-                    <SelectItem value="NON_PROFIT">Non-Profit</SelectItem>
-                    <SelectItem value="EDUCATIONAL_INSTITUTION">Educational Institution</SelectItem>
-                    <SelectItem value="OTHER">Other</SelectItem>
+                    {organizationType.map((item) => (
+                      <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -287,12 +288,9 @@ export default function EditCompanyPage() {
                     <SelectValue placeholder="Select size" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="STARTUP_1_10">Startup (1-10)</SelectItem>
-                    <SelectItem value="SMALL_11_50">Small (11-50)</SelectItem>
-                    <SelectItem value="MEDIUM_51_200">Medium (51-200)</SelectItem>
-                    <SelectItem value="LARGE_201_500">Large (201-500)</SelectItem>
-                    <SelectItem value="ENTERPRISE_501_1000">Enterprise (501-1000)</SelectItem>
-                    <SelectItem value="CORPORATION_1000+">Corporation (1000+)</SelectItem>
+                    {organizationSize.map((item) => (
+                      <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

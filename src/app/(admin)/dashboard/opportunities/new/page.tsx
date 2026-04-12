@@ -38,20 +38,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-
-const opportunityTypes = [
-  "SCHOLARSHIP",
-  "FELLOWSHIP",
-  "INTERNSHIP",
-  "BURSARY",
-  "GRANT",
-  "TRAINING",
-  "COMPETITION",
-  "MENTORSHIP",
-  "VOLUNTEER",
-  "CONFERENCE",
-  "OTHER",
-]
+import { opportunityType, jobStatus } from "@/constants/enums"
 
 export default function NewOpportunityPage() {
   const router = useRouter()
@@ -306,8 +293,11 @@ export default function NewOpportunityPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="DRAFT">Draft</SelectItem>
-                    <SelectItem value="PUBLISHED">Published</SelectItem>
+                    {jobStatus
+                      .filter((s) => s.value === "DRAFT" || s.value === "PUBLISHED")
+                      .map((s) => (
+                        <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -340,10 +330,8 @@ export default function NewOpportunityPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {opportunityTypes.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {type.charAt(0) + type.slice(1).toLowerCase()}
-                      </SelectItem>
+                    {opportunityType.map((item) => (
+                      <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

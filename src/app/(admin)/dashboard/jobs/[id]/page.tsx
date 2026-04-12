@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
+import { employmentType, experienceLevel, organizationIndustry, currencies, jobStatus, jobCategory } from "@/constants/enums"
 import { FileImportButton } from "@/components/file-import-button"
 import { Briefcase, MapPin, Banknote, Building2, Settings2, Tag, Search, ArrowLeft, Plus } from "lucide-react"
 import {
@@ -284,12 +285,9 @@ export default function EditJobPage() {
                   <Select value={form.employmentType} onValueChange={(v) => setForm({ ...form, employmentType: v })}>
                     <SelectTrigger className="border-slate-200"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="FULL_TIME">Full-time</SelectItem>
-                      <SelectItem value="PART_TIME">Part-time</SelectItem>
-                      <SelectItem value="CONTRACT">Contract</SelectItem>
-                      <SelectItem value="INTERNSHIP">Internship</SelectItem>
-                      <SelectItem value="TEMPORARY">Temporary</SelectItem>
-                      <SelectItem value="VOLUNTEER">Volunteer</SelectItem>
+                      {employmentType.map((item) => (
+                        <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -298,12 +296,9 @@ export default function EditJobPage() {
                   <Select value={form.experienceLevel} onValueChange={(v) => setForm({ ...form, experienceLevel: v })}>
                     <SelectTrigger className="border-slate-200"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="ENTRY_LEVEL">Entry Level</SelectItem>
-                      <SelectItem value="MID_LEVEL">Mid Level</SelectItem>
-                      <SelectItem value="SENIOR">Senior</SelectItem>
-                      <SelectItem value="MANAGER">Manager</SelectItem>
-                      <SelectItem value="DIRECTOR">Director</SelectItem>
-                      <SelectItem value="EXECUTIVE">Executive</SelectItem>
+                      {experienceLevel.map((item) => (
+                        <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -312,12 +307,19 @@ export default function EditJobPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label className="text-sm font-medium text-slate-700">Industry</Label>
-                  <Input
+                  <Select
                     value={form.industry}
-                    onChange={(e) => setForm({ ...form, industry: e.target.value })}
-                    placeholder="e.g. Technology"
-                    className="border-slate-200 focus:border-blue-400"
-                  />
+                    onValueChange={(v) => setForm({ ...form, industry: v })}
+                  >
+                    <SelectTrigger className="border-slate-200 focus:border-blue-400">
+                      <SelectValue placeholder="Select industry" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {organizationIndustry.map((item) => (
+                        <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-sm font-medium text-slate-700">Positions</Label>
@@ -386,12 +388,9 @@ export default function EditJobPage() {
                 <Select value={form.salaryCurrency} onValueChange={(v) => setForm({ ...form, salaryCurrency: v })}>
                   <SelectTrigger className="border-slate-200"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="KES">KES (Kenyan Shilling)</SelectItem>
-                    <SelectItem value="USD">USD (US Dollar)</SelectItem>
-                    <SelectItem value="GBP">GBP (British Pound)</SelectItem>
-                    <SelectItem value="EUR">EUR (Euro)</SelectItem>
-                    <SelectItem value="TZS">TZS (Tanzanian Shilling)</SelectItem>
-                    <SelectItem value="UGX">UGX (Ugandan Shilling)</SelectItem>
+                    {currencies.map((item) => (
+                      <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -459,9 +458,9 @@ export default function EditJobPage() {
                 <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
                   <SelectTrigger className="border-slate-200"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="DRAFT">Draft</SelectItem>
-                    <SelectItem value="PUBLISHED">Published</SelectItem>
-                    <SelectItem value="CLOSED">Closed</SelectItem>
+                    {jobStatus.filter((s) => ["DRAFT", "PUBLISHED", "CLOSED"].includes(s.value)).map((item) => (
+                      <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
