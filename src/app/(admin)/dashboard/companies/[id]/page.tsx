@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/dialog"
 import { toast } from "sonner"
 import { FileImportButton } from "@/components/file-import-button"
+import { exportToCSV } from "@/lib/export-utils"
 import { organizationType, organizationIndustry, organizationSize, organizationLocation } from "@/constants/enums"
 import {
   Building2,
@@ -68,6 +69,7 @@ import {
   History,
   StickyNote,
   Pin,
+  Download,
 } from "lucide-react"
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -725,6 +727,60 @@ export default function CompanyDetailPage() {
       fetchNotes()
     }
   }, [activeTab, companyNotes.length, fetchNotes])
+
+  // ── CSV export handlers ──
+
+  const handleExportPayments = () => {
+    if (filteredPayments.length === 0) {
+      toast.error("No payments to export")
+      return
+    }
+    const data = filteredPayments.map((p) => ({
+      Date: formatDateTime(p.createdAt),
+      Type: p.type,
+      Description: p.description || "",
+      Phone: p.phoneNumber || "",
+      "Amount (KES)": p.amount,
+      Status: p.status,
+      "M-Pesa Receipt": p.mpesaReceiptNumber || "",
+    }))
+    const date = new Date().toISOString().split("T")[0]
+    exportToCSV(data, `${company!.slug}-payments-${date}`)
+    toast.success("Payments exported")
+  }
+
+  const handleExportCredits = () => {
+    if (creditLedger.length === 0) {
+      toast.error("No credit transactions to export")
+      return
+    }
+    const data = creditLedger.map((e) => ({
+      Date: formatDateTime(e.createdAt),
+      Type: e.type.replace(/_/g, " "),
+      Description: e.description,
+      Credits: e.credits,
+      "Balance After": e.balanceAfter,
+    }))
+    const date = new Date().toISOString().split("T")[0]
+    exportToCSV(data, `${company!.slug}-credits-${date}`)
+    toast.success("Credit ledger exported")
+  }
+
+  const handleExportActivity = () => {
+    if (activityLogs.length === 0) {
+      toast.error("No activity logs to export")
+      return
+    }
+    const data = activityLogs.map((l) => ({
+      Date: formatDateTime(l.createdAt),
+      Action: l.action,
+      Details: l.details || "",
+      Admin: l.adminName || l.adminEmail || "",
+    }))
+    const date = new Date().toISOString().split("T")[0]
+    exportToCSV(data, `${company!.slug}-activity-${date}`)
+    toast.success("Activity log exported")
+  }
 
   // ── Edit form handler ──
 
@@ -1546,6 +1602,10 @@ export default function CompanyDetailPage() {
                         <SelectItem value="FAILED">Failed</SelectItem>
                       </SelectContent>
                     </Select>
+                    <Button variant="outline" size="sm" className="h-8 text-xs" onClick={handleExportPayments}>
+                      <Download className="size-3.5 mr-1.5" />
+                      Export CSV
+                    </Button>
                   </div>
                 </div>
               </CardHeader>
@@ -1659,9 +1719,15 @@ export default function CompanyDetailPage() {
                     <Zap className="size-4 text-amber-500" />
                     Credit Transaction History
                   </CardTitle>
-                  <Button variant="outline" size="sm" className="h-8 text-xs" onClick={fetchCredits} disabled={creditLoading}>
-                    Refresh
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" className="h-8 text-xs" onClick={handleExportCredits}>
+                      <Download className="size-3.5 mr-1.5" />
+                      Export CSV
+                    </Button>
+                    <Button variant="outline" size="sm" className="h-8 text-xs" onClick={fetchCredits} disabled={creditLoading}>
+                      Refresh
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="p-0">
@@ -1751,9 +1817,15 @@ export default function CompanyDetailPage() {
                     <History className="size-4 text-slate-500" />
                     Activity Log
                   </CardTitle>
-                  <Button variant="outline" size="sm" className="h-8 text-xs" onClick={fetchActivityLogs} disabled={activityLoading}>
-                    Refresh
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" className="h-8 text-xs" onClick={handleExportActivity}>
+                      <Download className="size-3.5 mr-1.5" />
+                      Export CSV
+                    </Button>
+                    <Button variant="outline" size="sm" className="h-8 text-xs" onClick={fetchActivityLogs} disabled={activityLoading}>
+                      Refresh
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="p-0">
