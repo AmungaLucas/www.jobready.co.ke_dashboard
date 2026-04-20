@@ -107,6 +107,7 @@ model Company {
   jobTemplates       JobTemplate[]
   payments           Payment[]
   activityLogs       CompanyActivityLog[]
+  notes              CompanyNote[]
   @@index([organizationType])
   @@index([industry])
   @@index([county])
@@ -684,4 +685,21 @@ model CompanyActivityLog {
   @@index([createdAt])
   @@index([action])
   @@map("company_activity_log")
+}
+
+model CompanyNote {
+  id          String   @id @default(cuid())
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  authorId    String?
+  authorName  String?
+  authorEmail String?
+  content     String   @db.Text
+  isPinned    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([isPinned])
+  @@map("company_notes")
 }

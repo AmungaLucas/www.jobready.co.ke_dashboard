@@ -66,6 +66,8 @@ import {
   Receipt,
   AlertTriangle,
   History,
+  StickyNote,
+  Pin,
 } from "lucide-react"
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -329,6 +331,16 @@ export default function CompanyDetailPage() {
     id: string; action: string; details: string | null; adminName: string | null; adminEmail: string | null; createdAt: string
   }[]>([])
   const [activityLoading, setActivityLoading] = useState(false)
+
+  // Notes state
+  const [companyNotes, setCompanyNotes] = useState<{
+    id: string; content: string; isPinned: boolean; authorName: string | null; authorEmail: string | null; createdAt: string; updatedAt: string
+  }[]>([])
+  const [notesLoading, setNotesLoading] = useState(false)
+  const [newNoteContent, setNewNoteContent] = useState("")
+  const [newNotePinned, setNewNotePinned] = useState(false)
+  const [noteSaving, setNoteSaving] = useState(false)
+  const [deletingNoteId, setDeletingNoteId] = useState<string | null>(null)
 
   const fetchCompany = useCallback(async () => {
     try {
@@ -627,6 +639,69 @@ export default function CompanyDetailPage() {
     }
   }, [id])
 
+  // ── Notes handlers ──
+
+  const fetchNotes = useCallback(async () => {
+    setNotesLoading(true)
+    try {
+      const res = await fetch(`/api/admin/companies/${id}/notes`)
+      if (res.ok) {
+        const data = await res.json()
+        setCompanyNotes(data)
+      }
+    } catch {
+      toast.error("Failed to load notes")
+    } finally {
+      setNotesLoading(false)
+    }
+  }, [id])
+
+  const handleAddNote = async () => {
+    if (!newNoteContent.trim()) return
+    setNoteSaving(true)
+    try {
+      const res = await fetch(`/api/admin/companies/${id}/notes`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: newNoteContent.trim(), isPinned: newNotePinned }),
+      })
+      if (res.ok) {
+        toast.success("Note added")
+        setNewNoteContent("")
+        setNewNotePinned(false)
+        fetchNotes()
+      } else {
+        toast.error("Failed to add note")
+      }
+    } catch {
+      toast.error("Failed to add note")
+    } finally {
+      setNoteSaving(false)
+    }
+  }
+
+  const handleDeleteNote = async (noteId: string) => {
+    if (!window.confirm("Are you sure you want to delete this note?")) return
+    setDeletingNoteId(noteId)
+    try {
+      const res = await fetch(`/api/admin/companies/${id}/notes`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ noteId }),
+      })
+      if (res.ok) {
+        toast.success("Note deleted")
+        fetchNotes()
+      } else {
+        toast.error("Failed to delete note")
+      }
+    } catch {
+      toast.error("Failed to delete note")
+    } finally {
+      setDeletingNoteId(null)
+    }
+  }
+
   useEffect(() => {
     if (activeTab === "activity" && activityLogs.length === 0) {
       fetchActivityLogs()
@@ -644,6 +719,12 @@ export default function CompanyDetailPage() {
       fetchBoostStats()
     }
   }, [activeTab, boostStats, fetchBoostStats])
+
+  useEffect(() => {
+    if (activeTab === "notes" && companyNotes.length === 0) {
+      fetchNotes()
+    }
+  }, [activeTab, companyNotes.length, fetchNotes])
 
   // ── Edit form handler ──
 
@@ -824,6 +905,10 @@ export default function CompanyDetailPage() {
           <TabsTrigger value="activity" className="gap-1.5">
             <History className="size-3.5" />
             <span className="hidden sm:inline">Activity</span>
+          </TabsTrigger>
+          <TabsTrigger value="notes" className="gap-1.5">
+            <StickyNote className="size-3.5" />
+            <span className="hidden sm:inline">Notes</span>
           </TabsTrigger>
           <TabsTrigger value="team" className="gap-1.5">
             <Users className="size-3.5" />
@@ -1716,7 +1801,117 @@ export default function CompanyDetailPage() {
         </TabsContent>
 
         {/* ═══════════════════════════════════════════════════════════════════ */}
-        {/* TAB 6: TEAM MEMBERS                                                */}
+        {/* TAB 6: NOTES                                                        */}
+        {/* ═══════════════════════════════════════════════════════════════════ */}
+        <TabsContent value="notes">
+          <div className="space-y-6">
+            {/* Add Note */}
+            <Card className="border-0 shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-[15px] font-semibold text-slate-800 flex items-center gap-2">
+                  <StickyNote className="size-4 text-amber-500" />
+                  Add Note
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Textarea
+                  value={newNoteContent}
+                  onChange={(e) => setNewNoteContent(e.target.value)}
+                  placeholder="Add an internal note about this company..."
+                  className="min-h-[100px] resize-y"
+                />
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={newNotePinned}
+                      onCheckedChange={setNewNotePinned}
+                      id="pin-note"
+                    />
+                    <Label htmlFor="pin-note" className="text-sm text-slate-600 flex items-center gap-1.5 cursor-pointer">
+                      <Pin className="size-3.5" />
+                      Pin note
+                    </Label>
+                  </div>
+                  <Button
+                    onClick={handleAddNote}
+                    disabled={!newNoteContent.trim() || noteSaving}
+                    size="sm"
+                  >
+                    {noteSaving ? "Adding..." : "Add Note"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Notes List */}
+            <div className="space-y-3">
+              {notesLoading ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map((i) => (
+                    <Card key={i} className="border-0 shadow-sm">
+                      <CardContent className="p-4 space-y-2">
+                        <Skeleton className="h-4 w-48" />
+                        <Skeleton className="h-3 w-32" />
+                        <Skeleton className="h-16 w-full" />
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : companyNotes.length === 0 ? (
+                <Card className="border-0 shadow-sm">
+                  <CardContent className="p-8 text-center">
+                    <StickyNote className="size-10 text-slate-300 mx-auto mb-3" />
+                    <p className="text-sm text-slate-500">No notes yet. Add the first note about this company.</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                companyNotes.map((note) => (
+                  <Card
+                    key={note.id}
+                    className={`border-0 shadow-sm ${note.isPinned ? "border-l-4 border-l-amber-400" : ""}`}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between gap-3 mb-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm font-medium text-slate-800">
+                            {note.authorName || note.authorEmail || "Unknown"}
+                          </span>
+                          {note.isPinned && (
+                            <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 text-[10px] px-1.5 py-0">
+                              <Pin className="size-2.5 mr-0.5" /> Pinned
+                            </Badge>
+                          )}
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-slate-400 hover:text-red-600 h-7 w-7 p-0 shrink-0"
+                          onClick={() => handleDeleteNote(note.id)}
+                          disabled={deletingNoteId === note.id}
+                        >
+                          {deletingNoteId === note.id ? (
+                            <RotateCcw className="size-3.5 animate-spin" />
+                          ) : (
+                            <Trash2 className="size-3.5" />
+                          )}
+                        </Button>
+                      </div>
+                      <p className="text-sm text-slate-600 whitespace-pre-wrap leading-relaxed mb-2">
+                        {note.content}
+                      </p>
+                      <p className="text-xs text-slate-400">
+                        {formatDateTime(note.createdAt)}
+                      </p>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* ═══════════════════════════════════════════════════════════════════ */}
+        {/* TAB 7: TEAM MEMBERS                                                */}
         {/* ═══════════════════════════════════════════════════════════════════ */}
         <TabsContent value="team">
           <div className="space-y-6">
