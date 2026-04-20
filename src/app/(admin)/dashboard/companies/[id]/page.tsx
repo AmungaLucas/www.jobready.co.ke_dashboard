@@ -65,6 +65,7 @@ import {
   RotateCcw,
   Receipt,
   AlertTriangle,
+  History,
 } from "lucide-react"
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -206,6 +207,18 @@ const roleColors: Record<string, string> = {
   RECRUITER: "bg-gray-100 text-gray-600 border-gray-200",
 }
 
+const activityActionColors: Record<string, string> = {
+  CHANGE_PLAN: "bg-blue-100 text-blue-700",
+  EXTEND_SUBSCRIPTION: "bg-blue-100 text-blue-700",
+  TOGGLE_AUTO_RENEW: "bg-blue-100 text-blue-700",
+  ADD_CREDITS: "bg-emerald-100 text-emerald-700",
+  SUSPEND: "bg-red-100 text-red-700",
+  REACTIVATE: "bg-emerald-100 text-emerald-700",
+  REMOVE_MEMBER: "bg-amber-100 text-amber-700",
+  CANCEL_INVITE: "bg-amber-100 text-amber-700",
+  UPDATE_COMPANY: "bg-slate-100 text-slate-700",
+}
+
 const plans = ["FREE", "STARTER", "PROFESSIONAL", "ENTERPRISE"] as const
 
 function formatKES(amount: number): string {
@@ -310,6 +323,12 @@ export default function CompanyDetailPage() {
   // Boost state
   const [boostStats, setBoostStats] = useState<{ totalBoosts: number; totalBoostRevenue: number; activeBoosts: number } | null>(null)
   const [boostedOnly, setBoostedOnly] = useState(false)
+
+  // Activity log state
+  const [activityLogs, setActivityLogs] = useState<{
+    id: string; action: string; details: string | null; adminName: string | null; adminEmail: string | null; createdAt: string
+  }[]>([])
+  const [activityLoading, setActivityLoading] = useState(false)
 
   const fetchCompany = useCallback(async () => {
     try {
@@ -565,6 +584,21 @@ export default function CompanyDetailPage() {
     }
   }
 
+  const fetchActivityLogs = useCallback(async () => {
+    setActivityLoading(true)
+    try {
+      const res = await fetch(`/api/admin/companies/${id}?includeActivity=true`)
+      if (res.ok) {
+        const data = await res.json()
+        if (data.activityLogs) setActivityLogs(data.activityLogs)
+      }
+    } catch {
+      // Silent fail
+    } finally {
+      setActivityLoading(false)
+    }
+  }, [id])
+
   const fetchCredits = useCallback(async () => {
     setCreditLoading(true)
     try {
@@ -592,6 +626,12 @@ export default function CompanyDetailPage() {
       // Silently fail for boost stats
     }
   }, [id])
+
+  useEffect(() => {
+    if (activeTab === "activity" && activityLogs.length === 0) {
+      fetchActivityLogs()
+    }
+  }, [activeTab, activityLogs.length, fetchActivityLogs])
 
   useEffect(() => {
     if (activeTab === "credits" && creditLedger.length === 0) {
@@ -780,6 +820,10 @@ export default function CompanyDetailPage() {
           <TabsTrigger value="credits" className="gap-1.5">
             <Zap className="size-3.5" />
             <span className="hidden sm:inline">Credits</span>
+          </TabsTrigger>
+          <TabsTrigger value="activity" className="gap-1.5">
+            <History className="size-3.5" />
+            <span className="hidden sm:inline">Activity</span>
           </TabsTrigger>
           <TabsTrigger value="team" className="gap-1.5">
             <Users className="size-3.5" />
@@ -1580,7 +1624,99 @@ export default function CompanyDetailPage() {
         </TabsContent>
 
         {/* ═══════════════════════════════════════════════════════════════════ */}
-        {/* TAB 5: TEAM MEMBERS                                                */}
+        {/* TAB 5: ACTIVITY LOG                                                 */}
+        {/* ═══════════════════════════════════════════════════════════════════ */}
+        <TabsContent value="activity">
+          <div className="space-y-6">
+            {/* Summary row */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Card className="border-0 shadow-sm">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-slate-50 text-slate-600 rounded-lg">
+                      <History className="size-4" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-slate-900">{activityLoading ? "—" : activityLogs.length}</p>
+                      <p className="text-xs text-slate-500">Total Actions</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-0 shadow-sm">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
+                      <Clock className="size-4" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-900">{activityLoading ? "—" : (activityLogs.length > 0 ? formatDateTime(activityLogs[0].createdAt) : "No actions yet")}</p>
+                      <p className="text-xs text-slate-500">Last Action</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Activity log table */}
+            <Card className="border-0 shadow-sm">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-[15px] font-semibold text-slate-800 flex items-center gap-2">
+                    <History className="size-4 text-slate-500" />
+                    Activity Log
+                  </CardTitle>
+                  <Button variant="outline" size="sm" className="h-8 text-xs" onClick={fetchActivityLogs} disabled={activityLoading}>
+                    Refresh
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                {activityLoading ? (
+                  <div className="py-12 text-center text-slate-400 text-sm">Loading...</div>
+                ) : activityLogs.length === 0 ? (
+                  <div className="py-12 text-center text-slate-400 text-sm">
+                    No activity recorded yet
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Action</TableHead>
+                          <TableHead className="hidden sm:table-cell">Details</TableHead>
+                          <TableHead className="hidden md:table-cell">Admin</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {activityLogs.map((log) => (
+                          <TableRow key={log.id}>
+                            <TableCell className="text-sm whitespace-nowrap">{formatDateTime(log.createdAt)}</TableCell>
+                            <TableCell>
+                              <Badge variant="secondary" className={`text-xs ${activityActionColors[log.action] || "bg-gray-100 text-gray-700"}`}>
+                                {log.action.replace(/_/g, " ")}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="hidden sm:table-cell text-sm text-slate-600 max-w-[350px] truncate">
+                              {log.details || "—"}
+                            </TableCell>
+                            <TableCell className="hidden md:table-cell text-sm text-slate-500">
+                              {log.adminName || log.adminEmail || "—"}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* ═══════════════════════════════════════════════════════════════════ */}
+        {/* TAB 6: TEAM MEMBERS                                                */}
         {/* ═══════════════════════════════════════════════════════════════════ */}
         <TabsContent value="team">
           <div className="space-y-6">

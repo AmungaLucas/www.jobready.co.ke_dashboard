@@ -106,6 +106,7 @@ model Company {
   creditLedger       CompanyCreditLedger[]
   jobTemplates       JobTemplate[]
   payments           Payment[]
+  activityLogs       CompanyActivityLog[]
   @@index([organizationType])
   @@index([industry])
   @@index([county])
@@ -665,4 +666,22 @@ model JobTemplate {
 
   @@index([companyId])
   @@map("job_templates")
+}
+
+model CompanyActivityLog {
+  id         String   @id @default(cuid())
+  companyId  String
+  company    Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  adminId    String?
+  adminName  String?
+  adminEmail String?
+  action     String
+  details    String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([companyId])
+  @@index([createdAt])
+  @@index([action])
+  @@map("company_activity_log")
 }
