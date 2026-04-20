@@ -93,6 +93,7 @@ model Company {
   metaTitle        String?
   metaDescription  String?
   ogImage          String?
+  aiMeta           Json?
   jobCount         Int       @default(0)
   opportunityCount Int       @default(0)
   createdAt        DateTime  @default(now())

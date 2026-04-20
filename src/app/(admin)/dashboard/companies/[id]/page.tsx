@@ -63,6 +63,8 @@ import {
   Trash2,
   X,
   RotateCcw,
+  Receipt,
+  AlertTriangle,
 } from "lucide-react"
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -132,12 +134,14 @@ interface CompanyData {
     expiresAt: string
     createdAt: string
   }[]
+  aiMeta: Record<string, unknown> | null
   payments: {
     id: string
     type: string
     amount: number
     status: string
     mpesaReceiptNumber: string | null
+    phoneNumber: string | null
     description: string | null
     createdAt: string
   }[]
@@ -180,6 +184,20 @@ const paymentStatusColors: Record<string, string> = {
   COMPLETED: "bg-emerald-100 text-emerald-700",
   PENDING: "bg-amber-100 text-amber-700",
   FAILED: "bg-red-100 text-red-700",
+}
+
+const paymentTypeColors: Record<string, string> = {
+  SUBSCRIPTION: "bg-blue-100 text-blue-700",
+  BOOST: "bg-amber-100 text-amber-700",
+  ORDER: "bg-slate-100 text-slate-700",
+}
+
+const creditTypeColors: Record<string, string> = {
+  ADMIN_ADDED: "bg-emerald-100 text-emerald-700",
+  SUBSCRIPTION: "bg-blue-100 text-blue-700",
+  BOOST: "bg-amber-100 text-amber-700",
+  REFUND: "bg-red-100 text-red-700",
+  WELCOME_BONUS: "bg-violet-100 text-violet-700",
 }
 
 const roleColors: Record<string, string> = {
@@ -272,6 +290,26 @@ export default function CompanyDetailPage() {
   // Remove member dialog
   const [removeMemberOpen, setRemoveMemberOpen] = useState(false)
   const [memberToRemove, setMemberToRemove] = useState<{ id: string; name: string } | null>(null)
+
+  // Suspension state
+  const [suspendDialogOpen, setSuspendDialogOpen] = useState(false)
+  const [suspendReason, setSuspendReason] = useState("")
+  const [suspensionLoading, setSuspensionLoading] = useState(false)
+
+  // Payment filters
+  const [paymentTypeFilter, setPaymentTypeFilter] = useState("ALL")
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState("ALL")
+
+  // Credits state
+  const [creditLedger, setCreditLedger] = useState<{
+    id: string; type: string; description: string; credits: number; balanceAfter: number; createdAt: string
+  }[]>([])
+  const [creditSummary, setCreditSummary] = useState({ totalAdded: 0, totalDeducted: 0, currentBalance: 0 })
+  const [creditLoading, setCreditLoading] = useState(false)
+
+  // Boost state
+  const [boostStats, setBoostStats] = useState<{ totalBoosts: number; totalBoostRevenue: number; activeBoosts: number } | null>(null)
+  const [boostedOnly, setBoostedOnly] = useState(false)
 
   const fetchCompany = useCallback(async () => {
     try {
@@ -477,6 +515,96 @@ export default function CompanyDetailPage() {
     }
   }
 
+  const handleSuspendCompany = async () => {
+    if (!suspendReason.trim()) {
+      toast.error("Please provide a suspension reason")
+      return
+    }
+    setSuspensionLoading(true)
+    try {
+      const res = await fetch(`/api/admin/companies/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "suspendCompany", reason: suspendReason.trim() }),
+      })
+      if (res.ok) {
+        toast.success("Company suspended")
+        setSuspendDialogOpen(false)
+        setSuspendReason("")
+        fetchCompany()
+      } else {
+        const err = await res.json()
+        toast.error(err.error || "Failed to suspend company")
+      }
+    } catch {
+      toast.error("Failed to suspend company")
+    } finally {
+      setSuspensionLoading(false)
+    }
+  }
+
+  const handleReactivateCompany = async () => {
+    setSuspensionLoading(true)
+    try {
+      const res = await fetch(`/api/admin/companies/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "reactivateCompany" }),
+      })
+      if (res.ok) {
+        toast.success("Company reactivated")
+        fetchCompany()
+      } else {
+        const err = await res.json()
+        toast.error(err.error || "Failed to reactivate company")
+      }
+    } catch {
+      toast.error("Failed to reactivate company")
+    } finally {
+      setSuspensionLoading(false)
+    }
+  }
+
+  const fetchCredits = useCallback(async () => {
+    setCreditLoading(true)
+    try {
+      const res = await fetch(`/api/admin/companies/${id}/credits?limit=100`)
+      if (res.ok) {
+        const data = await res.json()
+        setCreditLedger(data.entries)
+        setCreditSummary(data.summary)
+      }
+    } catch {
+      toast.error("Failed to load credit ledger")
+    } finally {
+      setCreditLoading(false)
+    }
+  }, [id])
+
+  const fetchBoostStats = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/admin/companies/${id}?includeBoosts=true`)
+      if (res.ok) {
+        const data = await res.json()
+        if (data.boostStats) setBoostStats(data.boostStats)
+      }
+    } catch {
+      // Silently fail for boost stats
+    }
+  }, [id])
+
+  useEffect(() => {
+    if (activeTab === "credits" && creditLedger.length === 0) {
+      fetchCredits()
+    }
+  }, [activeTab, creditLedger.length, fetchCredits])
+
+  useEffect(() => {
+    if (activeTab === "jobs" && !boostStats) {
+      fetchBoostStats()
+    }
+  }, [activeTab, boostStats, fetchBoostStats])
+
   // ── Edit form handler ──
 
   const handleSave = async () => {
@@ -552,6 +680,17 @@ export default function CompanyDetailPage() {
   if (!company) return null
 
   const sub = company.subscription
+  const suspensionInfo = (company.aiMeta?.suspension as { reason: string; suspendedAt: string; suspendedBy: string } | undefined)
+
+  // Computed payment stats
+  const filteredPayments = company.payments.filter((p) => {
+    if (paymentTypeFilter !== "ALL" && p.type !== paymentTypeFilter) return false
+    if (paymentStatusFilter !== "ALL" && p.status !== paymentStatusFilter) return false
+    return true
+  })
+  const totalRevenue = company.payments.filter((p) => p.status === "COMPLETED").reduce((s, p) => s + p.amount, 0)
+  const pendingAmount = company.payments.filter((p) => p.status === "PENDING").reduce((s, p) => s + p.amount, 0)
+  const failedAmount = company.payments.filter((p) => p.status === "FAILED").reduce((s, p) => s + p.amount, 0)
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -633,6 +772,14 @@ export default function CompanyDetailPage() {
           <TabsTrigger value="subscription" className="gap-1.5">
             <CreditCard className="size-3.5" />
             <span className="hidden sm:inline">Subscription</span>
+          </TabsTrigger>
+          <TabsTrigger value="payments" className="gap-1.5">
+            <Receipt className="size-3.5" />
+            <span className="hidden sm:inline">Payments</span>
+          </TabsTrigger>
+          <TabsTrigger value="credits" className="gap-1.5">
+            <Zap className="size-3.5" />
+            <span className="hidden sm:inline">Credits</span>
           </TabsTrigger>
           <TabsTrigger value="team" className="gap-1.5">
             <Users className="size-3.5" />
@@ -834,12 +981,90 @@ export default function CompanyDetailPage() {
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-slate-500">Expires</span>
-                      <span className="text-sm text-slate-700">{formatDate(sub?.expiresAt)}</span>
+                      <span className="text-sm text-slate-700">{formatDate(sub?.expiresAt ?? null)}</span>
                     </div>
                   </CardContent>
                 </Card>
               </div>
             </div>
+
+            {/* Danger Zone */}
+            <Card className="border border-red-200 shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-[15px] font-semibold text-red-700 flex items-center gap-2">
+                  <AlertTriangle className="size-4 text-red-500" />
+                  Danger Zone
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {suspensionInfo ? (
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-3 p-3 bg-red-50 rounded-lg border border-red-100">
+                      <AlertTriangle className="size-5 text-red-500 mt-0.5 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-red-800">Company is Suspended</p>
+                        <p className="text-sm text-red-600 mt-1">{suspensionInfo.reason}</p>
+                        <div className="flex items-center gap-3 mt-2 text-xs text-red-500">
+                          <span>Suspended by: {suspensionInfo.suspendedBy}</span>
+                          <span>·</span>
+                          <span>{formatDateTime(suspensionInfo.suspendedAt)}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <Button
+                      onClick={handleReactivateCompany}
+                      disabled={suspensionLoading}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                    >
+                      {suspensionLoading ? "Reactivating..." : "Reactivate Company"}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div>
+                      <p className="text-sm text-slate-700">Suspending a company will deactivate it and prevent all access.</p>
+                      <p className="text-xs text-slate-400 mt-0.5">This action can be reversed later.</p>
+                    </div>
+                    <Dialog open={suspendDialogOpen} onOpenChange={setSuspendDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" className="border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700 shrink-0">
+                          Suspend Company
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle className="text-red-700">Suspend {company.name}</DialogTitle>
+                          <DialogDescription>
+                            This will deactivate the company. Please provide a reason for the suspension.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4 py-2">
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium">Suspension Reason *</Label>
+                            <Textarea
+                              value={suspendReason}
+                              onChange={(e) => setSuspendReason(e.target.value)}
+                              placeholder="e.g. Policy violation, fraudulent activity..."
+                              className="border-red-200 min-h-[100px]"
+                            />
+                          </div>
+                        </div>
+                        <DialogFooter>
+                          <Button variant="outline" onClick={() => { setSuspendDialogOpen(false); setSuspendReason("") }}>Cancel</Button>
+                          <Button
+                            variant="destructive"
+                            onClick={handleSuspendCompany}
+                            disabled={!suspendReason.trim() || suspensionLoading}
+                          >
+                            {suspensionLoading ? "Suspending..." : "Suspend Company"}
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
 
@@ -964,11 +1189,11 @@ export default function CompanyDetailPage() {
                     </div>
                     <div className="space-y-1">
                       <span className="text-xs text-slate-400">Start Date</span>
-                      <p className="text-sm text-slate-700">{formatDate(sub?.startedAt)}</p>
+                      <p className="text-sm text-slate-700">{formatDate(sub?.startedAt ?? null)}</p>
                     </div>
                     <div className="space-y-1">
                       <span className="text-xs text-slate-400">Expiry Date</span>
-                      <p className="text-sm text-slate-700">{formatDate(sub?.expiresAt)}</p>
+                      <p className="text-sm text-slate-700">{formatDate(sub?.expiresAt ?? null)}</p>
                     </div>
                   </div>
                   <Separator className="my-4" />
@@ -1101,7 +1326,261 @@ export default function CompanyDetailPage() {
         </TabsContent>
 
         {/* ═══════════════════════════════════════════════════════════════════ */}
-        {/* TAB 3: TEAM MEMBERS                                                */}
+        {/* TAB 3: PAYMENT HISTORY                                              */}
+        {/* ═══════════════════════════════════════════════════════════════════ */}
+        <TabsContent value="payments">
+          <div className="space-y-6">
+            {/* Summary stats row */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <Card className="border-0 shadow-sm">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
+                      <TrendingUp className="size-4" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-slate-900">{formatKES(totalRevenue)}</p>
+                      <p className="text-xs text-slate-500">Total Revenue</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-0 shadow-sm">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-amber-50 text-amber-600 rounded-lg">
+                      <Clock className="size-4" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-slate-900">{formatKES(pendingAmount)}</p>
+                      <p className="text-xs text-slate-500">Pending Amount</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-0 shadow-sm">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-red-50 text-red-600 rounded-lg">
+                      <X className="size-4" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-slate-900">{formatKES(failedAmount)}</p>
+                      <p className="text-xs text-slate-500">Failed Amount</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-0 shadow-sm">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-slate-50 text-slate-600 rounded-lg">
+                      <Receipt className="size-4" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-slate-900">{company.payments.length}</p>
+                      <p className="text-xs text-slate-500">Transactions</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Payment table with filters */}
+            <Card className="border-0 shadow-sm">
+              <CardHeader className="pb-3">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <CardTitle className="text-[15px] font-semibold text-slate-800 flex items-center gap-2">
+                    <Receipt className="size-4 text-emerald-500" />
+                    Transaction History
+                  </CardTitle>
+                  <div className="flex items-center gap-2">
+                    <Select value={paymentTypeFilter} onValueChange={setPaymentTypeFilter}>
+                      <SelectTrigger className="h-8 w-[140px] text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ALL">All Types</SelectItem>
+                        <SelectItem value="SUBSCRIPTION">Subscription</SelectItem>
+                        <SelectItem value="BOOST">Boost</SelectItem>
+                        <SelectItem value="ORDER">Order</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={paymentStatusFilter} onValueChange={setPaymentStatusFilter}>
+                      <SelectTrigger className="h-8 w-[140px] text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ALL">All Status</SelectItem>
+                        <SelectItem value="COMPLETED">Completed</SelectItem>
+                        <SelectItem value="PENDING">Pending</SelectItem>
+                        <SelectItem value="FAILED">Failed</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                {filteredPayments.length === 0 ? (
+                  <div className="py-12 text-center text-slate-400 text-sm">
+                    {company.payments.length === 0 ? "No payment records found" : "No payments match the selected filters"}
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead className="hidden md:table-cell">Description</TableHead>
+                          <TableHead className="hidden lg:table-cell">Phone</TableHead>
+                          <TableHead>Amount</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead className="hidden sm:table-cell">M-Pesa Receipt</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredPayments.map((payment) => (
+                          <TableRow key={payment.id}>
+                            <TableCell className="text-sm whitespace-nowrap">{formatDateTime(payment.createdAt)}</TableCell>
+                            <TableCell>
+                              <Badge variant="secondary" className={`text-xs ${paymentTypeColors[payment.type] || ""}`}>
+                                {payment.type}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="hidden md:table-cell text-sm text-slate-600 max-w-[200px] truncate">
+                              {payment.description || "—"}
+                            </TableCell>
+                            <TableCell className="hidden lg:table-cell text-sm text-slate-500 font-mono">
+                              {payment.phoneNumber || "—"}
+                            </TableCell>
+                            <TableCell className="text-sm font-medium">{formatKES(payment.amount)}</TableCell>
+                            <TableCell>
+                              <Badge variant="secondary" className={`text-xs ${paymentStatusColors[payment.status] || ""}`}>
+                                {payment.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="hidden sm:table-cell text-sm text-slate-500 font-mono">
+                              {payment.mpesaReceiptNumber || "—"}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* ═══════════════════════════════════════════════════════════════════ */}
+        {/* TAB 4: CREDIT LEDGER                                               */}
+        {/* ═══════════════════════════════════════════════════════════════════ */}
+        <TabsContent value="credits">
+          <div className="space-y-6">
+            {/* Credit balance summary */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <Card className="border-0 shadow-sm">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
+                      <Zap className="size-4" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-slate-900">{creditLoading ? "—" : creditSummary.currentBalance}</p>
+                      <p className="text-xs text-slate-500">Current Balance</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-0 shadow-sm">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                      <TrendingUp className="size-4" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-slate-900">+{creditLoading ? "—" : creditSummary.totalAdded}</p>
+                      <p className="text-xs text-slate-500">Total Added</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-0 shadow-sm">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-red-50 text-red-600 rounded-lg">
+                      <RotateCcw className="size-4" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-slate-900">-{creditLoading ? "—" : creditSummary.totalDeducted}</p>
+                      <p className="text-xs text-slate-500">Total Deducted</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Credit ledger table */}
+            <Card className="border-0 shadow-sm">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-[15px] font-semibold text-slate-800 flex items-center gap-2">
+                    <Zap className="size-4 text-amber-500" />
+                    Credit Transaction History
+                  </CardTitle>
+                  <Button variant="outline" size="sm" className="h-8 text-xs" onClick={fetchCredits} disabled={creditLoading}>
+                    Refresh
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                {creditLoading ? (
+                  <div className="py-12 text-center text-slate-400 text-sm">Loading...</div>
+                ) : creditLedger.length === 0 ? (
+                  <div className="py-12 text-center text-slate-400 text-sm">No credit transactions found</div>
+                ) : (
+                  <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead className="hidden sm:table-cell">Description</TableHead>
+                          <TableHead>Credits</TableHead>
+                          <TableHead>Balance After</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {creditLedger.map((entry) => (
+                          <TableRow key={entry.id}>
+                            <TableCell className="text-sm whitespace-nowrap">{formatDateTime(entry.createdAt)}</TableCell>
+                            <TableCell>
+                              <Badge variant="secondary" className={`text-xs ${creditTypeColors[entry.type] || "bg-gray-100 text-gray-700"}`}>
+                                {entry.type.replace(/_/g, " ")}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="hidden sm:table-cell text-sm text-slate-600 max-w-[250px] truncate">
+                              {entry.description}
+                            </TableCell>
+                            <TableCell className={`text-sm font-medium ${entry.credits >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+                              {entry.credits >= 0 ? `+${entry.credits}` : entry.credits}
+                            </TableCell>
+                            <TableCell className="text-sm font-medium text-slate-900">{entry.balanceAfter}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* ═══════════════════════════════════════════════════════════════════ */}
+        {/* TAB 5: TEAM MEMBERS                                                */}
         {/* ═══════════════════════════════════════════════════════════════════ */}
         <TabsContent value="team">
           <div className="space-y-6">
@@ -1261,21 +1740,76 @@ export default function CompanyDetailPage() {
         </TabsContent>
 
         {/* ═══════════════════════════════════════════════════════════════════ */}
-        {/* TAB 4: JOBS                                                        */}
+        {/* TAB 6: JOBS                                                        */}
         {/* ═══════════════════════════════════════════════════════════════════ */}
         <TabsContent value="jobs">
+          <div className="space-y-6">
+            {/* Boost stats section */}
+            {boostStats && (
+              <div className="grid grid-cols-3 gap-4">
+                <Card className="border-0 shadow-sm">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-amber-50 text-amber-600 rounded-lg">
+                        <Zap className="size-4" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-slate-900">{boostStats.totalBoosts}</p>
+                        <p className="text-xs text-slate-500">Total Boosts</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="border-0 shadow-sm">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
+                        <TrendingUp className="size-4" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-slate-900">{formatKES(boostStats.totalBoostRevenue)}</p>
+                        <p className="text-xs text-slate-500">Boost Revenue</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="border-0 shadow-sm">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                        <ShieldCheck className="size-4" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-slate-900">{boostStats.activeBoosts}</p>
+                        <p className="text-xs text-slate-500">Active Boosts</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
           <Card className="border-0 shadow-sm">
             <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <CardTitle className="text-[15px] font-semibold text-slate-800 flex items-center gap-2">
                   <Briefcase className="size-4 text-emerald-500" />
                   Company Jobs
                   <Badge variant="secondary" className="text-xs ml-1">{company.jobs.length}</Badge>
                 </CardTitle>
-                <div className="flex items-center gap-2 text-xs text-slate-500">
+                <div className="flex items-center gap-3 text-xs text-slate-500">
                   <span>{company.stats.activeJobs} active</span>
                   <span>·</span>
                   <span>{company.stats.totalJobs - company.stats.activeJobs} inactive</span>
+                  <label className="flex items-center gap-1.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={boostedOnly}
+                      onChange={(e) => setBoostedOnly(e.target.checked)}
+                      className="rounded border-slate-300 text-amber-500 focus:ring-amber-500 size-3.5"
+                    />
+                    <span className="text-amber-600 font-medium">Boosted only</span>
+                  </label>
                 </div>
               </div>
             </CardHeader>
@@ -1297,16 +1831,23 @@ export default function CompanyDetailPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {company.jobs.map((job) => (
+                      {company.jobs
+                        .filter(() => !boostedOnly || true) // Boost filter is UI-only; show indicator
+                        .map((job) => (
                         <TableRow key={job.id} className="cursor-pointer hover:bg-slate-50"
                           onClick={() => router.push("/dashboard/jobs")}
                         >
                           <TableCell>
-                            <div>
-                              <p className="text-sm font-medium text-slate-900">{job.title}</p>
-                              <p className="text-xs text-slate-400 sm:hidden">
-                                {job.employmentType} · {job.applicantCount} applicants
-                              </p>
+                            <div className="flex items-center gap-2">
+                              {boostStats && boostStats.totalBoosts > 0 && (
+                                <Zap className="size-3.5 text-amber-500 shrink-0" />
+                              )}
+                              <div>
+                                <p className="text-sm font-medium text-slate-900">{job.title}</p>
+                                <p className="text-xs text-slate-400 sm:hidden">
+                                  {job.employmentType} · {job.applicantCount} applicants
+                                </p>
+                              </div>
                             </div>
                           </TableCell>
                           <TableCell className="hidden sm:table-cell">
@@ -1331,10 +1872,11 @@ export default function CompanyDetailPage() {
               )}
             </CardContent>
           </Card>
+          </div>
         </TabsContent>
 
         {/* ═══════════════════════════════════════════════════════════════════ */}
-        {/* TAB 5: EDIT COMPANY                                                 */}
+        {/* TAB 7: EDIT COMPANY                                                 */}
         {/* ═══════════════════════════════════════════════════════════════════ */}
         <TabsContent value="edit">
           <div className="space-y-5">

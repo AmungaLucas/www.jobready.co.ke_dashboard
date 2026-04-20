@@ -20,6 +20,9 @@ export async function GET(
     const { id } = await params
     if (!id) return NextResponse.json({ error: "Missing id parameter" }, { status: 400 })
 
+    const { searchParams } = new URL(req.url)
+    const includeBoosts = searchParams.get("includeBoosts") === "true"
+
     const company = await db.company.findUnique({
       where: { id },
       include: {
@@ -34,6 +37,16 @@ export async function GET(
           orderBy: { createdAt: "desc" },
         },
         payments: {
+          select: {
+            id: true,
+            type: true,
+            amount: true,
+            status: true,
+            mpesaReceiptNumber: true,
+            phoneNumber: true,
+            description: true,
+            createdAt: true,
+          },
           orderBy: { createdAt: "desc" },
           take: 50,
         },
@@ -68,10 +81,27 @@ export async function GET(
     const totalMembers = company.members.length
     const totalPayments = company.payments.reduce((sum, p) => sum + (p.status === "COMPLETED" ? p.amount : 0), 0)
 
+    // Compute boost stats from payments
+    let boostStats = { totalBoosts: 0, totalBoostRevenue: 0, activeBoosts: 0 }
+    if (includeBoosts) {
+      const boostPayments = await db.payment.findMany({
+        where: { companyId: id, type: "BOOST", status: "COMPLETED" },
+      })
+      boostStats = {
+        totalBoosts: boostPayments.length,
+        totalBoostRevenue: boostPayments.reduce((sum, p) => sum + p.amount, 0),
+        activeBoosts: boostPayments.filter((p) => {
+          // Consider boost active if created within last 30 days (simplified heuristic)
+          return (Date.now() - new Date(p.createdAt).getTime()) < 30 * 24 * 60 * 60 * 1000
+        }).length,
+      }
+    }
+
     return NextResponse.json({
       ...company,
       creditBalance: latestCredit?.balanceAfter ?? 0,
       stats: { totalJobs, activeJobs, totalMembers, totalPayments },
+      ...(includeBoosts ? { boostStats } : {}),
     })
   } catch (error) {
     console.error("[GET /api/admin/companies/[id]]", error)
@@ -188,6 +218,62 @@ export async function PATCH(
       })
 
       return NextResponse.json({ ...entry, currentBalance: newBalance })
+    }
+
+    // ── Suspend company ──
+    if (action === "suspendCompany") {
+      const { reason } = data
+      if (!reason || typeof reason !== "string" || reason.trim().length === 0) {
+        return NextResponse.json({ error: "Suspension reason is required" }, { status: 400 })
+      }
+
+      const company = await db.company.findUnique({ where: { id } })
+      if (!company) {
+        return NextResponse.json({ error: "Company not found" }, { status: 404 })
+      }
+
+      const existingMeta = (company.aiMeta as Record<string, unknown>) || {}
+      const suspensionData = {
+        reason: reason.trim(),
+        suspendedAt: new Date().toISOString(),
+        suspendedBy: (admin.name as string) || (admin.email as string) || "admin",
+      }
+
+      const updated = await db.company.update({
+        where: { id },
+        data: {
+          isActive: false,
+          aiMeta: { ...existingMeta, suspension: suspensionData },
+        },
+      })
+
+      return NextResponse.json(updated)
+    }
+
+    // ── Reactivate company ──
+    if (action === "reactivateCompany") {
+      const company = await db.company.findUnique({ where: { id } })
+      if (!company) {
+        return NextResponse.json({ error: "Company not found" }, { status: 404 })
+      }
+
+      const existingMeta = (company.aiMeta as Record<string, unknown>) || {}
+      const { suspension, ...restMeta } = existingMeta
+      const reactivationData = {
+        reactivatedAt: new Date().toISOString(),
+        reactivatedBy: (admin.name as string) || (admin.email as string) || "admin",
+        previousSuspension: suspension,
+      }
+
+      const updated = await db.company.update({
+        where: { id },
+        data: {
+          isActive: true,
+          aiMeta: JSON.parse(JSON.stringify({ ...restMeta, reactivation: reactivationData })),
+        },
+      })
+
+      return NextResponse.json(updated)
     }
 
     // ── Remove member ──
