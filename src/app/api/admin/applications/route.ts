@@ -18,6 +18,7 @@ export async function GET(req: NextRequest) {
   const limit = parseInt(searchParams.get("limit") || "20")
   const search = searchParams.get("search") || ""
   const status = searchParams.get("status") || ""
+  const companyId = searchParams.get("companyId") || ""
 
   const where: Record<string, unknown> = {}
   if (search) {
@@ -27,13 +28,16 @@ export async function GET(req: NextRequest) {
     ]
   }
   if (status) where.status = status
+  if (companyId) {
+    where.job = { ...(where.job as Record<string, unknown> || {}), companyId }
+  }
 
   const [items, total] = await Promise.all([
     db.application.findMany({
       where,
       include: {
         user: { select: { id: true, name: true, email: true, avatar: true } },
-        job: { select: { id: true, title: true, company: { select: { name: true } } } },
+        job: { select: { id: true, title: true, companyId: true, company: { select: { id: true, name: true } } } },
       },
       orderBy: { createdAt: "desc" },
       skip: (page - 1) * limit,

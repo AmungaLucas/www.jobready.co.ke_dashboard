@@ -29,6 +29,11 @@ const roleColors: Record<string, string> = {
   JOB_SEEKER: "bg-slate-100 text-slate-700",
 }
 
+interface CompanyMembership {
+  role: string
+  company: { id: string; name: string }
+}
+
 interface User {
   id: string
   name: string
@@ -39,6 +44,7 @@ interface User {
   emailVerified: boolean
   lastLoginAt: string | null
   createdAt: string
+  companyMemberships: CompanyMembership[]
 }
 
 export default function UsersPage() {
@@ -108,8 +114,8 @@ export default function UsersPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>User</TableHead>
-                  <TableHead className="hidden md:table-cell">Phone</TableHead>
                   <TableHead>Role</TableHead>
+                  <TableHead className="hidden md:table-cell">Company</TableHead>
                   <TableHead className="hidden sm:table-cell">Verified</TableHead>
                   <TableHead className="hidden lg:table-cell">Last Login</TableHead>
                   <TableHead className="hidden lg:table-cell">Joined</TableHead>
@@ -129,43 +135,53 @@ export default function UsersPage() {
                     <TableCell colSpan={6} className="text-center py-8 text-slate-400">No users found</TableCell>
                   </TableRow>
                 ) : (
-                  items.map((user) => (
-                    <TableRow key={user.id} className="hover:bg-slate-50">
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 bg-slate-100 rounded-full flex items-center justify-center flex-shrink-0">
-                            <span className="text-slate-600 font-semibold text-sm">
-                              {user.name?.charAt(0).toUpperCase()}
-                            </span>
+                  items.map((user) => {
+                    const membership = user.companyMemberships?.[0]
+                    return (
+                      <TableRow key={user.id} className="hover:bg-slate-50">
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 bg-slate-100 rounded-full flex items-center justify-center flex-shrink-0">
+                              <span className="text-slate-600 font-semibold text-sm">
+                                {user.name?.charAt(0).toUpperCase()}
+                              </span>
+                            </div>
+                            <div>
+                              <p className="font-medium text-sm">{user.name}</p>
+                              <p className="text-xs text-slate-400">{user.email}</p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-medium text-sm">{user.name}</p>
-                            <p className="text-xs text-slate-400">{user.email}</p>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary" className={`text-xs ${roleColors[user.role] || ""}`}>
+                            {user.role?.replace(/_/g, " ")}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell text-sm text-slate-500">
+                          {membership ? (
+                            <div>
+                              <span className="font-medium">{membership.company.name}</span>
+                              <span className="text-xs text-slate-400 ml-1">({membership.role})</span>
+                            </div>
+                          ) : "—"}
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell">
+                          <div className="flex items-center gap-1.5">
+                            <span className={`w-2 h-2 rounded-full ${user.emailVerified ? "bg-emerald-500" : "bg-gray-300"}`} />
+                            <span className="text-xs text-slate-500">{user.emailVerified ? "Yes" : "No"}</span>
                           </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell text-sm text-slate-500">{user.phone || "—"}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className={`text-xs ${roleColors[user.role] || ""}`}>
-                          {user.role?.replace(/_/g, " ")}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="hidden sm:table-cell">
-                        <div className="flex items-center gap-1.5">
-                          <span className={`w-2 h-2 rounded-full ${user.emailVerified ? "bg-emerald-500" : "bg-gray-300"}`} />
-                          <span className="text-xs text-slate-500">{user.emailVerified ? "Yes" : "No"}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell text-sm text-slate-400">
-                        {user.lastLoginAt
-                          ? new Date(user.lastLoginAt).toLocaleDateString("en-KE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })
-                          : "Never"}
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell text-sm text-slate-400">
-                        {new Date(user.createdAt).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" })}
-                      </TableCell>
-                    </TableRow>
-                  ))
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell text-sm text-slate-400">
+                          {user.lastLoginAt
+                            ? new Date(user.lastLoginAt).toLocaleDateString("en-KE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })
+                            : "Never"}
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell text-sm text-slate-400">
+                          {new Date(user.createdAt).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" })}
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })
                 )}
               </TableBody>
             </Table>

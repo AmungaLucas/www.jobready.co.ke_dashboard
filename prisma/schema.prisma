@@ -27,15 +27,16 @@ model User {
   lastLoginAt    DateTime?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
-  authAccounts   AuthAccount[]
-  savedJobs      SavedJob[]
-  savedArticles  SavedArticle[]
-  jobAlerts      JobAlert[]
-  reactions      ArticleReaction[]
-  notifications  Notification[]
-  orders         Order[]
-  newsletterSubs NewsletterSubscription[]
-  applications   Application[]
+  authAccounts       AuthAccount[]
+  savedJobs          SavedJob[]
+  savedArticles      SavedArticle[]
+  jobAlerts          JobAlert[]
+  reactions          ArticleReaction[]
+  notifications      Notification[]
+  orders             Order[]
+  newsletterSubs     NewsletterSubscription[]
+  applications       Application[]
+  companyMemberships CompanyMember[]
   @@map("users")
 }
 
@@ -96,8 +97,14 @@ model Company {
   opportunityCount Int       @default(0)
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
-  jobs             Job[]
-  opportunities    Opportunity[]
+  jobs               Job[]
+  opportunities      Opportunity[]
+  members            CompanyMember[]
+  invites            CompanyInvite[]
+  subscription       CompanySubscription?
+  creditLedger       CompanyCreditLedger[]
+  jobTemplates       JobTemplate[]
+  payments           Payment[]
   @@index([organizationType])
   @@index([industry])
   @@index([county])
@@ -141,6 +148,8 @@ model Job {
   publishedAt         DateTime? @map("published_at")
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
+  templateName        String?
+  templateId          String?
   savedBy             SavedJob[]
   applications        Application[]
   @@index([employmentType])
@@ -448,8 +457,12 @@ model OrderItem {
 
 model Payment {
   id                 String    @id @default(cuid())
-  orderId            String
-  order              Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId            String?
+  order              Order?    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  companyId          String?
+  company            Company?  @relation(fields: [companyId], references: [id])
+  type               String    @default("ORDER")
+  description        String?
   checkoutRequestId  String    @unique
   mpesaReceiptNumber String?   @unique
   phoneNumber        String
@@ -460,6 +473,7 @@ model Payment {
   mpesaCallbackData  Json?
   createdAt          DateTime  @default(now())
   @@index([orderId])
+  @@index([companyId])
   @@index([status])
   @@index([createdAt])
   @@map("payments")
@@ -563,4 +577,91 @@ model Application {
   @@index([userId])
   @@index([status])
   @@map("applications")
+}
+
+// ===== NEW MODELS =====
+
+model CompanyMember {
+  id           String    @id @default(cuid())
+  companyId    String
+  company      Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role         String    @default("RECRUITER")
+  status       String    @default("ACTIVE")
+  joinedAt     DateTime  @default(now())
+  invitedBy    String?
+  lastActiveAt DateTime?
+
+  @@unique([companyId, userId])
+  @@index([companyId])
+  @@index([userId])
+  @@index([role])
+  @@map("company_members")
+}
+
+model CompanyInvite {
+  id         String    @id @default(cuid())
+  companyId  String
+  company    Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  email      String
+  role       String    @default("RECRUITER")
+  token      String    @unique
+  status     String    @default("PENDING")
+  invitedBy  String?
+  expiresAt  DateTime
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([companyId])
+  @@index([email])
+  @@index([status])
+  @@map("company_invites")
+}
+
+model CompanySubscription {
+  id          String    @id @default(cuid())
+  companyId   String    @unique
+  company     Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  plan        String    @default("FREE")
+  status      String    @default("ACTIVE")
+  startedAt   DateTime  @default(now())
+  expiresAt   DateTime?
+  paymentId   String?
+  autoRenew   Boolean   @default(false)
+  features    Json?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([companyId])
+  @@map("company_subscriptions")
+}
+
+model CompanyCreditLedger {
+  id           String   @id @default(cuid())
+  companyId    String
+  company      Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  type         String
+  description  String
+  credits      Int
+  balanceAfter Int
+  createdAt    DateTime @default(now())
+
+  @@index([companyId])
+  @@index([createdAt])
+  @@map("company_credit_ledger")
+}
+
+model JobTemplate {
+  id        String   @id @default(cuid())
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdBy String
+  title     String
+  data      Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([companyId])
+  @@map("job_templates")
 }

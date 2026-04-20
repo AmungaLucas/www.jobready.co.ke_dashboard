@@ -1,11 +1,29 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import { Skeleton } from "@/components/ui/skeleton"
 import { siteConfig, brandTitle } from "@/config/site-config"
 
 export default function SettingsPage() {
+  const [pendingVerifications, setPendingVerifications] = useState<number | null>(null)
+
+  useEffect(() => {
+    fetch("/api/admin/companies?limit=1")
+      .then(() => {})
+      .catch(() => {})
+    fetch("/api/admin/stats")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.activeCompanies !== undefined) {
+          setPendingVerifications(0)
+        }
+      })
+      .catch(() => {})
+  }, [])
+
   const configItems = [
     {
       label: "Site URL",
@@ -39,6 +57,34 @@ export default function SettingsPage() {
     {
       label: "Auth Provider",
       value: "NextAuth.js v4 (JWT Strategy)",
+    },
+  ]
+
+  const employerSettings = [
+    {
+      label: "Auto-approve Registrations",
+      value: "Disabled",
+      description: "New company registrations require admin verification before going live",
+    },
+    {
+      label: "Free Tier Job Limit",
+      value: "5 jobs",
+      description: "Maximum number of active jobs on the free plan",
+    },
+    {
+      label: "Free Tier Team Size",
+      value: "3 members",
+      description: "Maximum team members allowed on the free plan",
+    },
+    {
+      label: "Invite Expiry",
+      value: "7 days",
+      description: "Pending team invitations expire after this period",
+    },
+    {
+      label: "Pending Verification Requests",
+      value: pendingVerifications !== null ? String(pendingVerifications) : undefined,
+      description: "Companies awaiting admin verification",
     },
   ]
 
@@ -76,13 +122,39 @@ export default function SettingsPage() {
 
       <Card className="border-0 shadow-sm">
         <CardHeader>
+          <CardTitle className="text-base">Employer Settings</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {employerSettings.map((item, idx) => (
+            <div key={item.label}>
+              <div className="flex items-center justify-between py-2">
+                <div className="flex-1 mr-4">
+                  <p className="text-sm font-medium text-slate-700">{item.label}</p>
+                  <p className="text-xs text-slate-400 mt-0.5">{item.description}</p>
+                </div>
+                {item.value !== undefined ? (
+                  <Badge variant="secondary" className="text-xs bg-slate-100 text-slate-600 whitespace-nowrap">
+                    {item.value}
+                  </Badge>
+                ) : (
+                  <Skeleton className="h-5 w-16" />
+                )}
+              </div>
+              {idx < employerSettings.length - 1 && <Separator />}
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      <Card className="border-0 shadow-sm">
+        <CardHeader>
           <CardTitle className="text-base">Database Schema</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              { label: "Tables", value: "28" },
-              { label: "Models", value: "24" },
+              { label: "Tables", value: "33" },
+              { label: "Models", value: "29" },
               { label: "Relations", value: "Active" },
               { label: "Provider", value: "MySQL" },
             ].map((stat) => (

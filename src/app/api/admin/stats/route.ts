@@ -29,6 +29,9 @@ export async function GET(req: NextRequest) {
       newsletterSubs,
       recentJobs,
       recentApplications,
+      totalEmployers,
+      companiesByPlanRaw,
+      paymentRevenue,
     ] = await Promise.all([
       db.job.count(),
       db.job.count({ where: { isActive: true, status: "PUBLISHED" } }),
@@ -67,7 +70,26 @@ export async function GET(req: NextRequest) {
           job: { select: { title: true, company: { select: { name: true } } } },
         },
       }),
+      db.user.count({ where: { role: "EMPLOYER" } }),
+      db.companySubscription.groupBy({
+        by: ["plan"],
+        _count: { plan: true },
+      }),
+      db.payment.aggregate({
+        _sum: { amount: true },
+        where: { status: "COMPLETED" },
+      }),
     ])
+
+    const companiesByPlan: Record<string, number> = {
+      FREE: 0,
+      STARTER: 0,
+      PROFESSIONAL: 0,
+      ENTERPRISE: 0,
+    }
+    for (const row of companiesByPlanRaw) {
+      companiesByPlan[row.plan] = row._count.plan
+    }
 
     // Monthly revenue data for last 6 months
     const sixMonthsAgo = new Date()
@@ -96,6 +118,9 @@ export async function GET(req: NextRequest) {
       recentOrders,
       recentJobs,
       recentApplications,
+      totalEmployers,
+      companiesByPlan,
+      totalRevenueFromPayments: paymentRevenue._sum.amount || 0,
       monthlyRevenue: monthlyRevenue.map((r) => ({
         month: r.month,
         total: Number(r.total),

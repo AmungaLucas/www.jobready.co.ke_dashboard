@@ -41,6 +41,14 @@ export async function GET(req: NextRequest) {
         emailVerified: true,
         lastLoginAt: true,
         createdAt: true,
+        companyMemberships: {
+          where: { status: "ACTIVE" },
+          select: {
+            role: true,
+            company: { select: { id: true, name: true } },
+          },
+          take: 1,
+        },
       },
       orderBy: { createdAt: "desc" },
       skip: (page - 1) * limit,

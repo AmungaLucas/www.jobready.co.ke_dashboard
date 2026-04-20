@@ -47,7 +47,12 @@ interface Application {
   createdAt: string
   updatedAt: string
   user: { id: string; name: string; email: string; avatar: string | null }
-  job: { id: string; title: string; company: { name: string } }
+  job: { id: string; title: string; companyId: string; company: { id: string; name: string } }
+}
+
+interface CompanyOption {
+  id: string
+  name: string
 }
 
 export default function ApplicationsPage() {
@@ -57,8 +62,17 @@ export default function ApplicationsPage() {
   const [totalPages, setTotalPages] = useState(1)
   const [search, setSearch] = useState("")
   const [status, setStatus] = useState("")
+  const [companyId, setCompanyId] = useState("")
+  const [companies, setCompanies] = useState<CompanyOption[]>([])
   const [selectedApp, setSelectedApp] = useState<Application | null>(null)
   const [notes, setNotes] = useState("")
+
+  useEffect(() => {
+    fetch("/api/admin/companies?limit=200")
+      .then((r) => r.json())
+      .then((d) => setCompanies(d.items || []))
+      .catch(() => {})
+  }, [])
 
   const fetchItems = useCallback(async () => {
     setLoading(true)
@@ -66,6 +80,7 @@ export default function ApplicationsPage() {
       const params = new URLSearchParams({ page: String(page), limit: "20" })
       if (search) params.set("search", search)
       if (status && status !== "ALL") params.set("status", status)
+      if (companyId) params.set("companyId", companyId)
 
       const res = await fetch(`/api/admin/applications?${params}`)
       const data = await res.json()
@@ -76,7 +91,7 @@ export default function ApplicationsPage() {
     } finally {
       setLoading(false)
     }
-  }, [page, search, status])
+  }, [page, search, status, companyId])
 
   useEffect(() => {
     fetchItems()
@@ -126,7 +141,7 @@ export default function ApplicationsPage() {
 
       <Card className="border-0 shadow-sm">
         <CardContent className="p-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <Input
               placeholder="Search by applicant or job..."
               value={search}
@@ -144,7 +159,16 @@ export default function ApplicationsPage() {
                 <SelectItem value="HIRED">Hired</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline" onClick={() => { setSearch(""); setStatus(""); setPage(1) }}>Clear</Button>
+            <Select value={companyId} onValueChange={(v) => { setCompanyId(v); setPage(1) }}>
+              <SelectTrigger><SelectValue placeholder="Company" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">All Companies</SelectItem>
+                {companies.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button variant="outline" onClick={() => { setSearch(""); setStatus(""); setCompanyId(""); setPage(1) }}>Clear</Button>
           </div>
         </CardContent>
       </Card>
@@ -177,7 +201,7 @@ export default function ApplicationsPage() {
                   </TableRow>
                 ) : (
                   items.map((app) => (
-                    <TableRow key={app.id} className="hover:bg-slate-50">
+                    <TableRow key={app.id} className="hover:bg-slate-50 cursor-pointer" onClick={() => openDetail(app)}>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <div className="w-9 h-9 bg-slate-100 rounded-full flex items-center justify-center flex-shrink-0">

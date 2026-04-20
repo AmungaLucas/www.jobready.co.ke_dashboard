@@ -54,15 +54,36 @@ export async function GET(req: NextRequest) {
     const where: Record<string, unknown> = {}
     if (search) where.name = { contains: search }
 
-    const [items, total] = await Promise.all([
+    const [companies, total] = await Promise.all([
       db.company.findMany({
         where,
         orderBy: { createdAt: "desc" },
         skip: (page - 1) * limit,
         take: limit,
+        include: {
+          members: {
+            where: { status: "ACTIVE" },
+            select: { role: true, user: { select: { name: true } } },
+          },
+          subscription: {
+            select: { plan: true, status: true },
+          },
+        },
       }),
       db.company.count({ where }),
     ])
+
+    const items = companies.map((company) => {
+      const owner = company.members.find((m) => m.role === "OWNER")
+      return {
+        ...company,
+        members: undefined,
+        subscription: undefined,
+        owner: owner?.user?.name || null,
+        teamSize: company.members.length,
+        plan: company.subscription?.plan || "FREE",
+      }
+    })
 
     return NextResponse.json({ items, total, page, totalPages: Math.ceil(total / limit) })
   } catch (error) {

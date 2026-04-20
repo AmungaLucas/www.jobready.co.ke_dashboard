@@ -16,6 +16,13 @@ import {
 } from "@/components/ui/table"
 import { toast } from "sonner"
 
+const planColors: Record<string, string> = {
+  FREE: "bg-gray-100 text-gray-600",
+  STARTER: "bg-slate-100 text-slate-700",
+  PROFESSIONAL: "bg-emerald-100 text-emerald-700",
+  ENTERPRISE: "bg-purple-100 text-purple-700",
+}
+
 interface Company {
   id: string
   name: string
@@ -28,6 +35,9 @@ interface Company {
   isActive: boolean
   jobCount: number
   createdAt: string
+  owner: string | null
+  teamSize: number
+  plan: string
 }
 
 export default function CompaniesPage() {
@@ -111,9 +121,10 @@ export default function CompaniesPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
-                  <TableHead className="hidden sm:table-cell">Industry</TableHead>
-                  <TableHead className="hidden md:table-cell">Type</TableHead>
-                  <TableHead className="hidden lg:table-cell">County</TableHead>
+                  <TableHead className="hidden sm:table-cell">Owner</TableHead>
+                  <TableHead className="hidden md:table-cell">Industry</TableHead>
+                  <TableHead className="hidden lg:table-cell">Team</TableHead>
+                  <TableHead className="hidden md:table-cell">Plan</TableHead>
                   <TableHead className="hidden sm:table-cell">Jobs</TableHead>
                   <TableHead>Verified</TableHead>
                   <TableHead>Featured</TableHead>
@@ -124,14 +135,14 @@ export default function CompaniesPage() {
                 {loading ? (
                   Array.from({ length: 8 }).map((_, i) => (
                     <TableRow key={i}>
-                      {Array.from({ length: 8 }).map((_, j) => (
+                      {Array.from({ length: 9 }).map((_, j) => (
                         <TableCell key={j}><Skeleton className="h-5 w-20" /></TableCell>
                       ))}
                     </TableRow>
                   ))
                 ) : items.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-slate-400">No companies found</TableCell>
+                    <TableCell colSpan={9} className="text-center py-8 text-slate-400">No companies found</TableCell>
                   </TableRow>
                 ) : (
                   items.map((item) => (
@@ -149,15 +160,20 @@ export default function CompaniesPage() {
                           </div>
                           <div>
                             <p className="font-medium text-sm">{item.name}</p>
-                            <p className="text-xs text-slate-400 lg:hidden">{item.industry}</p>
+                            <p className="text-xs text-slate-400 md:hidden">{item.industry} · {item.plan}</p>
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="hidden sm:table-cell text-sm text-slate-500">{item.industry}</TableCell>
-                      <TableCell className="hidden md:table-cell text-sm text-slate-500">
-                        {item.organizationType?.replace(/_/g, " ") || "—"}
+                      <TableCell className="hidden sm:table-cell text-sm text-slate-500">{item.owner || "—"}</TableCell>
+                      <TableCell className="hidden md:table-cell text-sm text-slate-500">{item.industry}</TableCell>
+                      <TableCell className="hidden lg:table-cell">
+                        <Badge variant="secondary" className="text-xs">{item.teamSize}</Badge>
                       </TableCell>
-                      <TableCell className="hidden lg:table-cell text-sm text-slate-500">{item.county || "—"}</TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        <Badge variant="secondary" className={`text-xs ${planColors[item.plan] || ""}`}>
+                          {item.plan}
+                        </Badge>
+                      </TableCell>
                       <TableCell className="hidden sm:table-cell">
                         <Badge variant="secondary" className="text-xs">{item.jobCount}</Badge>
                       </TableCell>
