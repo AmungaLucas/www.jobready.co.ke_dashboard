@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Loader2, Eye, EyeOff } from "lucide-react"
+import { siteConfig, brandInitials } from "@/config/site-config"
 
 function LoginCard() {
   const searchParams = useSearchParams()
@@ -89,7 +90,7 @@ function LoginCard() {
               name="email"
               type="email"
               autoComplete="email"
-              placeholder="admin@jobready.co.ke"
+              placeholder={`admin@${siteConfig.companyDomain}`}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -166,10 +167,10 @@ export default function LoginPage() {
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-3 mb-4">
             <div className="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center">
-              <span className="text-white font-bold text-xl">JR</span>
+              <span className="text-white font-bold text-xl">{brandInitials}</span>
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white">JobReady</h1>
+              <h1 className="text-2xl font-bold text-white">{siteConfig.brandName}</h1>
               <p className="text-slate-400 text-sm">Admin Dashboard</p>
             </div>
           </div>

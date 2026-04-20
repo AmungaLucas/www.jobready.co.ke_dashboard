@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import { siteConfig, brandTitle } from "@/config/site-config"
 
 export default function SettingsPage() {
   const configItems = [
@@ -12,7 +13,7 @@ export default function SettingsPage() {
     },
     {
       label: "Brand Name",
-      value: process.env.NEXT_PUBLIC_BRAND_NAME || "JobReady",
+      value: process.env.NEXT_PUBLIC_BRAND_NAME || siteConfig.brandName,
     },
     {
       label: "WhatsApp Number",
@@ -100,7 +101,7 @@ export default function SettingsPage() {
         </CardHeader>
         <CardContent className="text-sm text-slate-500">
           <p>
-            JobReady Admin Dashboard — Managing the JobReady.co.ke job board platform.
+            {brandTitle} — Managing the {siteConfig.companyDomain} job board platform.
             This dashboard connects to the main MySQL database and allows administrators
             to manage jobs, opportunities, companies, articles, orders, users, and applications.
           </p>

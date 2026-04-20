@@ -3,6 +3,7 @@
 import { createContext, useState, useEffect, ReactNode } from "react"
 import { useSession, signOut } from "next-auth/react"
 import { NextAuthProvider } from "@/providers/next-auth"
+import { siteConfig, brandInitials } from "@/config/site-config"
 
 function AdminShell({ children }: { children: ReactNode }) {
   return (
@@ -54,11 +55,11 @@ function DashboardShell({ children }: { children: ReactNode }) {
       >
         <div className="flex items-center gap-3 px-4 h-16 border-b border-slate-800">
           <div className="w-9 h-9 bg-emerald-500 rounded-lg flex items-center justify-center flex-shrink-0">
-            <span className="text-white font-bold text-lg">JR</span>
+            <span className="text-white font-bold text-lg">{brandInitials}</span>
           </div>
           {!collapsed && (
             <div className="overflow-hidden">
-              <h1 className="text-lg font-bold whitespace-nowrap">JobReady</h1>
+              <h1 className="text-lg font-bold whitespace-nowrap">{siteConfig.brandName}</h1>
               <p className="text-xs text-slate-400 whitespace-nowrap">Admin Dashboard</p>
             </div>
           )}

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
+import { brandTitle, brandDescription } from "@/config/site-config";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "JobReady Admin Dashboard",
-  description: "Admin dashboard for JobReady.co.ke - Kenya's leading job board platform",
+  title: brandTitle,
+  description: brandDescription,
   icons: {
     icon: "/logo.svg",
   },

@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { siteConfig } from "@/config/site-config"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -119,7 +120,7 @@ export default function DashboardPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Dashboard Overview</h1>
-        <p className="text-slate-500 mt-1">Welcome back! Here&apos;s what&apos;s happening on JobReady.</p>
+        <p className="text-slate-500 mt-1">Welcome back! Here&apos;s what&apos;s happening on {siteConfig.brandName}.</p>
       </div>
 
       {/* KPI Cards */}
