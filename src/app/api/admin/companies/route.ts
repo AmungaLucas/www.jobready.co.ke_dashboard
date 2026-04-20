@@ -50,14 +50,47 @@ export async function GET(req: NextRequest) {
     const page = parseInt(searchParams.get("page") || "1")
     const limit = parseInt(searchParams.get("limit") || "20")
     const search = searchParams.get("search") || ""
+    const plan = searchParams.get("plan") || ""
+    const status = searchParams.get("status") || ""
+    const verified = searchParams.get("verified") || ""
+    const featured = searchParams.get("featured") || ""
+    const sort = searchParams.get("sort") || "newest"
 
-    const where: Record<string, unknown> = {}
-    if (search) where.name = { contains: search }
+    // Build where clause
+    const conditions: Record<string, unknown>[] = []
+    if (search) conditions.push({ name: { contains: search } })
+    if (status === "ACTIVE") conditions.push({ isActive: true })
+    if (status === "INACTIVE") conditions.push({ isActive: false })
+    if (verified === "true") conditions.push({ isVerified: true })
+    if (verified === "false") conditions.push({ isVerified: false })
+    if (featured === "true") conditions.push({ isFeatured: true })
+    if (featured === "false") conditions.push({ isFeatured: false })
 
-    const [companies, total] = await Promise.all([
+    // Plan filter — FREE means no subscription record
+    if (plan) {
+      if (plan === "FREE") {
+        conditions.push({ subscription: { is: null } })
+      } else {
+        conditions.push({ subscription: { plan } })
+      }
+    }
+
+    const where = conditions.length > 0 ? { AND: conditions } : {}
+
+    // Build sort
+    const orderByMap: Record<string, Record<string, string>> = {
+      newest: { createdAt: "desc" },
+      oldest: { createdAt: "asc" },
+      name_asc: { name: "asc" },
+      name_desc: { name: "desc" },
+      jobs_desc: { jobCount: "desc" },
+    }
+    const orderBy = orderByMap[sort] || { createdAt: "desc" }
+
+    const [companies, total, summaryTotal, summaryActive, summaryVerified] = await Promise.all([
       db.company.findMany({
         where,
-        orderBy: { createdAt: "desc" },
+        orderBy,
         skip: (page - 1) * limit,
         take: limit,
         include: {
@@ -71,6 +104,9 @@ export async function GET(req: NextRequest) {
         },
       }),
       db.company.count({ where }),
+      db.company.count({}),
+      db.company.count({ where: { isActive: true } }),
+      db.company.count({ where: { isVerified: true } }),
     ])
 
     const items = companies.map((company) => {
@@ -85,7 +121,17 @@ export async function GET(req: NextRequest) {
       }
     })
 
-    return NextResponse.json({ items, total, page, totalPages: Math.ceil(total / limit) })
+    return NextResponse.json({
+      items,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+      summary: {
+        total: summaryTotal,
+        active: summaryActive,
+        verified: summaryVerified,
+      },
+    })
   } catch (error) {
     console.error("[GET /api/admin/companies]", error)
     return NextResponse.json({ error: "Failed to fetch companies" }, { status: 500 })
